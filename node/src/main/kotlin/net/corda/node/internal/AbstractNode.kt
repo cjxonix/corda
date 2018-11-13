@@ -813,11 +813,12 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         if (!cryptoService.containsKey(legalIdentityPrivateKeyAlias) && !signingCertificateStore.contains(legalIdentityPrivateKeyAlias)) {
             log.info("$legalIdentityPrivateKeyAlias not found in key store, generating fresh key!")
             storeLegalIdentity(legalIdentityPrivateKeyAlias)
-        } else if (cryptoService.containsKey(legalIdentityPrivateKeyAlias) || signingCertificateStore.contains(legalIdentityPrivateKeyAlias)){
+            signingCertificateStore = configuration.signingCertificateStore.get() // We need to resync after storeLegalIdentity.
+        } else if ((cryptoService.containsKey(legalIdentityPrivateKeyAlias) && !signingCertificateStore.contains(legalIdentityPrivateKeyAlias))
+                || !cryptoService.containsKey(legalIdentityPrivateKeyAlias) && signingCertificateStore.contains(legalIdentityPrivateKeyAlias)){
             val keyExistsIn: String = if (cryptoService.containsKey(legalIdentityPrivateKeyAlias)) "CryptoService" else "signingCertificateStore"
-            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, an entry for alias: $legalIdentityPrivateKeyAlias is only found in $keyExistsIn")
+            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, the entry for key-alias: $legalIdentityPrivateKeyAlias is only found in $keyExistsIn")
         }
-        signingCertificateStore = configuration.signingCertificateStore.get()
         val x509Cert = signingCertificateStore.query { getCertificate(legalIdentityPrivateKeyAlias) }
 
         // TODO: Use configuration to indicate composite key should be used instead of public key for the identity.
@@ -841,13 +842,17 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         val compositeKeyAlias = "$DISTRIBUTED_NOTARY_ALIAS_PREFIX-composite-key"
 
         val signingCertificateStore = configuration.signingCertificateStore.get()
-        val certificates = if (cryptoService.containsKey(compositeKeyAlias)) {
+        val certificates = if (cryptoService.containsKey(compositeKeyAlias) && signingCertificateStore.contains(compositeKeyAlias)) {
             val certificate = signingCertificateStore[compositeKeyAlias]
             // We have to create the certificate chain for the composite key manually, this is because we don't have a keystore
             // provider that understand compositeKey-privateKey combo. The cert chain is created using the composite key certificate +
             // the tail of the private key certificates, as they are both signed by the same certificate chain.
             listOf(certificate) + signingCertificateStore.query { getCertificateChain(privateKeyAlias) }.drop(1)
-        } else throw IllegalStateException("The identity public key for the notary service $serviceLegalName was not found in the key store.")
+        } else if ((cryptoService.containsKey(compositeKeyAlias) && !signingCertificateStore.contains(compositeKeyAlias))
+                || (!cryptoService.containsKey(compositeKeyAlias) && signingCertificateStore.contains(compositeKeyAlias))) {
+            val keyExistsIn: String = if (cryptoService.containsKey(compositeKeyAlias)) "CryptoService" else "signingCertificateStore"
+            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, the entry for key-alias: $compositeKeyAlias is only found in $keyExistsIn")
+        } else throw IllegalStateException("The identity key entry for the notary service $serviceLegalName cannot be found (in both CryptoService and signingCertificateStore).")
 
         val subject = CordaX500Name.build(certificates.first().subjectX500Principal)
         if (subject != serviceLegalName) {
