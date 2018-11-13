@@ -814,10 +814,8 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
             log.info("$legalIdentityPrivateKeyAlias not found in key store, generating fresh key!")
             storeLegalIdentity(legalIdentityPrivateKeyAlias)
             signingCertificateStore = configuration.signingCertificateStore.get() // We need to resync after storeLegalIdentity.
-        } else if ((cryptoService.containsKey(legalIdentityPrivateKeyAlias) && !signingCertificateStore.contains(legalIdentityPrivateKeyAlias))
-                || !cryptoService.containsKey(legalIdentityPrivateKeyAlias) && signingCertificateStore.contains(legalIdentityPrivateKeyAlias)){
-            val keyExistsIn: String = if (cryptoService.containsKey(legalIdentityPrivateKeyAlias)) "CryptoService" else "signingCertificateStore"
-            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, the entry for key-alias: $legalIdentityPrivateKeyAlias is only found in $keyExistsIn")
+        } else {
+            checkAliasMismatch(legalIdentityPrivateKeyAlias, signingCertificateStore)
         }
         val x509Cert = signingCertificateStore.query { getCertificate(legalIdentityPrivateKeyAlias) }
 
@@ -836,6 +834,15 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         return getPartyAndCertificatePlusAliasKeyPair(certificates, legalIdentityPrivateKeyAlias)
     }
 
+    // Check if a key alias exists only in one of the cryptoService and certSigningStore.
+    private fun checkAliasMismatch(alias: String, certificateStore: CertificateStore) {
+        if ((cryptoService.containsKey(alias) && !certificateStore.contains(alias))
+                || (!cryptoService.containsKey(alias) && certificateStore.contains(alias))) {
+            val keyExistsIn: String = if (cryptoService.containsKey(alias)) "CryptoService" else "signingCertificateStore"
+            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, the entry for key-alias: $alias is only found in $keyExistsIn")
+        }
+    }
+
     /** Loads pre-generated notary service cluster identity. */
     private fun loadNotaryClusterIdentity(serviceLegalName: CordaX500Name): Pair<PartyAndCertificate, KeyPair> {
         val privateKeyAlias = "$DISTRIBUTED_NOTARY_ALIAS_PREFIX-private-key"
@@ -848,11 +855,10 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
             // provider that understand compositeKey-privateKey combo. The cert chain is created using the composite key certificate +
             // the tail of the private key certificates, as they are both signed by the same certificate chain.
             listOf(certificate) + signingCertificateStore.query { getCertificateChain(privateKeyAlias) }.drop(1)
-        } else if ((cryptoService.containsKey(compositeKeyAlias) && !signingCertificateStore.contains(compositeKeyAlias))
-                || (!cryptoService.containsKey(compositeKeyAlias) && signingCertificateStore.contains(compositeKeyAlias))) {
-            val keyExistsIn: String = if (cryptoService.containsKey(compositeKeyAlias)) "CryptoService" else "signingCertificateStore"
-            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, the entry for key-alias: $compositeKeyAlias is only found in $keyExistsIn")
-        } else throw IllegalStateException("The identity key entry for the notary service $serviceLegalName cannot be found (in both CryptoService and signingCertificateStore).")
+        } else {
+            checkAliasMismatch(compositeKeyAlias, signingCertificateStore)
+            throw IllegalStateException("The identity key entry for the notary service $serviceLegalName cannot be found (in both CryptoService and signingCertificateStore).")
+        }
 
         val subject = CordaX500Name.build(certificates.first().subjectX500Principal)
         if (subject != serviceLegalName) {
