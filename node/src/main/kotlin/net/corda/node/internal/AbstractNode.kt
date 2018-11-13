@@ -836,8 +836,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
 
     // Check if a key alias exists only in one of the cryptoService and certSigningStore.
     private fun checkAliasMismatch(alias: String, certificateStore: CertificateStore) {
-        if ((cryptoService.containsKey(alias) && !certificateStore.contains(alias))
-                || (!cryptoService.containsKey(alias) && certificateStore.contains(alias))) {
+        if (cryptoService.containsKey(alias) != certificateStore.contains(alias)) {
             val keyExistsIn: String = if (cryptoService.containsKey(alias)) "CryptoService" else "signingCertificateStore"
             throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, the entry for key-alias: $alias is only found in $keyExistsIn")
         }
