@@ -66,7 +66,7 @@ class NodeConnection(val remoteNode: RemoteNode, private val jSchSession: Sessio
 
     /**
      * @param function should call [ChannelExec.connect].
-     * Returns a pair of (exit code, [function] return value).
+     * @return a pair of (exit code, [function] return value).
      */
     private fun <A> withChannelExec(command: String, function: (ChannelExec) -> A): Pair<Int, A> {
         val channel = jSchSession.openChannel("exec") as ChannelExec

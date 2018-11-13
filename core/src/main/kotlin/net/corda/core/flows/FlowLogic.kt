@@ -171,7 +171,7 @@ abstract class FlowLogic<out T> {
      * Note that this function is not just a simple send+receive pair: it is more efficient and more correct to
      * use this when you expect to do a message swap than do use [send] and then [receive] in turn.
      *
-     * Returns an [UntrustworthyData] wrapper around the received object.
+     * @return an [UntrustworthyData] wrapper around the received object.
      */
     @Deprecated("Use FlowSession.sendAndReceive()", level = DeprecationLevel.WARNING)
     inline fun <reified R : Any> sendAndReceive(otherParty: Party, payload: Any): UntrustworthyData<R> {
@@ -187,7 +187,7 @@ abstract class FlowLogic<out T> {
      * Note that this function is not just a simple send+receive pair: it is more efficient and more correct to
      * use this when you expect to do a message swap than do use [send] and then [receive] in turn.
      *
-     * Returns an [UntrustworthyData] wrapper around the received object.
+     * @return an [UntrustworthyData] wrapper around the received object.
      */
     @Deprecated("Use FlowSession.sendAndReceive()", level = DeprecationLevel.WARNING)
     @Suspendable
@@ -212,7 +212,7 @@ abstract class FlowLogic<out T> {
      * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
      * corrupted data in order to exploit your code.
      *
-     * Returns an [UntrustworthyData] wrapper around the received object.
+     * @return an [UntrustworthyData] wrapper around the received object.
      */
     @Deprecated("Use FlowSession.receive()", level = DeprecationLevel.WARNING)
     @Suspendable
@@ -256,7 +256,7 @@ abstract class FlowLogic<out T> {
      * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
      * corrupted data in order to exploit your code.
      *
-     * Returns a [Map] containing the objects received, wrapped in an [UntrustworthyData], by the [FlowSession]s who sent them.
+     * @return a [Map] containing the objects received, wrapped in an [UntrustworthyData], by the [FlowSession]s who sent them.
      */
     @Suspendable
     @JvmOverloads
@@ -278,7 +278,7 @@ abstract class FlowLogic<out T> {
      * verified for consistency and that all expectations are satisfied, as a malicious peer may send you subtly
      * corrupted data in order to exploit your code.
      *
-     * Returns a [List] containing the objects received, wrapped in an [UntrustworthyData], with the same order of [sessions].
+     * @return a [List] containing the objects received, wrapped in an [UntrustworthyData], with the same order of [sessions].
      */
     @Suspendable
     @JvmOverloads

@@ -19,8 +19,7 @@ import java.security.*
 /**
  * Utility to simplify the act of signing a byte array.
  * @param bytesToSign the data/message to be signed in [ByteArray] form (usually the Merkle root).
- *
- * Returns the [DigitalSignature] object on the input message.
+ * @return the [DigitalSignature] object on the input message.
  * @throws IllegalArgumentException if the signature scheme is not supported for this private key.
  * @throws InvalidKeyException if the private key is invalid.
  * @throws SignatureException if signing is not possible due to malformed data or private key.
@@ -33,8 +32,7 @@ fun PrivateKey.sign(bytesToSign: ByteArray): DigitalSignature = DigitalSignature
  * Utility to simplify the act of signing a byte array and return a [DigitalSignature.WithKey] object.
  * Note that there is no check if the public key matches with the signing private key.
  * @param bytesToSign the data/message to be signed in [ByteArray] form (usually the Merkle root).
- *
- * Returns the [DigitalSignature.WithKey] object on the input message [bytesToSign] and [publicKey].
+ * @return the [DigitalSignature.WithKey] object on the input message [bytesToSign] and [publicKey].
  * @throws IllegalArgumentException if the signature scheme is not supported for this private key.
  * @throws InvalidKeyException if the private key is invalid.
  * @throws SignatureException if signing is not possible due to malformed data or private key.
@@ -48,8 +46,7 @@ fun PrivateKey.sign(bytesToSign: ByteArray, publicKey: PublicKey): DigitalSignat
 /**
  * Helper function to sign with a key pair.
  * @param bytesToSign the data/message to be signed in [ByteArray] form (usually the Merkle root).
- *
- * Returns the digital signature (in [ByteArray]) on the input message.
+ * @return the digital signature (in [ByteArray]) on the input message.
  * @throws IllegalArgumentException if the signature scheme is not supported for this private key.
  * @throws InvalidKeyException if the private key is invalid.
  * @throws SignatureException if signing is not possible due to malformed data or private key.
@@ -66,8 +63,7 @@ fun KeyPair.sign(bytesToSign: OpaqueBytes): DigitalSignature.WithKey = sign(byte
 /**
  * Helper function for signing a [SignableData] object.
  * @param signableData the object to be signed.
- *
- * Returns a [TransactionSignature] object.
+ * @return a [TransactionSignature] object.
  * @throws IllegalArgumentException if the signature scheme is not supported for this private key.
  * @throws InvalidKeyException if the private key is invalid.
  * @throws SignatureException if signing is not possible due to malformed data or private key.
@@ -99,7 +95,7 @@ fun PublicKey.verify(content: ByteArray, signature: DigitalSignature) = Crypto.d
  * @throws SignatureException if the signature is invalid (i.e. damaged).
  * @throws IllegalArgumentException if the signature scheme is not supported or if any of the clear or signature data is empty.
  * @throws IllegalStateException if this is a [CompositeKey], because verification of composite key signatures is not supported.
- * Returns whether the signature is correct for this key.
+ * @return whether the signature is correct for this key.
  */
 @Throws(SignatureException::class, InvalidKeyException::class)
 fun PublicKey.isValid(content: ByteArray, signature: DigitalSignature): Boolean {
@@ -152,7 +148,7 @@ fun generateKeyPair(): KeyPair = Crypto.generateKeyPair()
  * Returns a key pair derived from the given private key entropy. This is useful for unit tests and other cases where
  * you want hard-coded private keys.
  * @param entropy a [BigInteger] value.
- * Returns a deterministically generated [KeyPair] for the [Crypto.DEFAULT_SIGNATURE_SCHEME].
+ * @return a deterministically generated [KeyPair] for the [Crypto.DEFAULT_SIGNATURE_SCHEME].
  */
 fun entropyToKeyPair(entropy: BigInteger): KeyPair = Crypto.deriveKeyPairFromEntropy(entropy)
 
@@ -185,8 +181,7 @@ fun KeyPair.verify(signatureData: ByteArray, clearData: ByteArray): Boolean = Cr
 /**
  * Generate a securely random [ByteArray] of requested number of bytes. Usually used for seeds, nonces and keys.
  * @param numOfBytes how many random bytes to output.
- *
- * Returns a random [ByteArray].
+ * @return a random [ByteArray].
  * @throws NoSuchAlgorithmException thrown if "NativePRNGNonBlocking" is not supported on the JVM
  * or if no strong [SecureRandom] implementations are available or if Security.getProperty("securerandom.strongAlgorithms") is null or empty,
  * which should never happen and suggests an unusual JVM or non-standard Java library.
@@ -208,8 +203,7 @@ fun secureRandomBytes(numOfBytes: Int): ByteArray = ByteArray(numOfBytes).apply 
  * where it may be possible that OS didn't yet collect enough entropy to fill the randomness pool for the 1st time.
  * @see <a href="http://www.2uo.de/myths-about-urandom/">Myths about urandom</a> for a more descriptive explanation on /dev/random Vs /dev/urandom.
  * TODO: check default settings per OS and random/urandom availability.
- *
- * Returns a [SecureRandom] object.
+ * @return a [SecureRandom] object.
  * @throws NoSuchAlgorithmException thrown if "NativePRNGNonBlocking" is not supported on the JVM
  * or if no strong SecureRandom implementations are available or if Security.getProperty("securerandom.strongAlgorithms") is null or empty,
  * which should never happen and suggests an unusual JVM or non-standard Java library.
@@ -257,6 +251,6 @@ fun <T : Any> serializedHash(x: T): SecureHash = x.serialize(context = Serializa
  * @param privacySalt a [PrivacySalt].
  * @param groupIndex the fixed index (ordinal) of this component group.
  * @param internalIndex the internal index of this object in its corresponding components list.
- * Returns SHA256(SHA256(privacySalt || groupIndex || internalIndex))
+ * @return SHA256(SHA256(privacySalt || groupIndex || internalIndex))
  */
 fun computeNonce(privacySalt: PrivacySalt, groupIndex: Int, internalIndex: Int) = SecureHash.sha256Twice(privacySalt.bytes + ByteBuffer.allocate(8).putInt(groupIndex).putInt(internalIndex).array())

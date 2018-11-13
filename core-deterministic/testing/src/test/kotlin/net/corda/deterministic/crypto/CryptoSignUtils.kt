@@ -24,8 +24,7 @@ object CryptoSignUtils {
      * @param signatureScheme a [SignatureScheme] object, retrieved from supported signature schemes, see [Crypto].
      * @param privateKey the signer's [PrivateKey].
      * @param clearData the data/message to be signed in [ByteArray] form (usually the Merkle root).
-     *
-     * Returns the digital signature (in [ByteArray]) on the input message.
+     * @return the digital signature (in [ByteArray]) on the input message.
      * @throws IllegalArgumentException if the signature scheme is not supported for this private key.
      * @throws InvalidKeyException if the private key is invalid.
      * @throws SignatureException if signing is not possible due to malformed data or private key.
@@ -49,8 +48,7 @@ object CryptoSignUtils {
      * a timestamp or partial and blind signature indicators.
      * @param keyPair the signer's [KeyPair].
      * @param signableData a [SignableData] object that adds extra information to a transaction.
-     *
-     * Returns a [TransactionSignature] object than contains the output of a successful signing, signer's public key and
+     * @return a [TransactionSignature] object than contains the output of a successful signing, signer's public key and
      * the signature metadata.
      * @throws IllegalArgumentException if the signature scheme is not supported for this private key.
      * @throws InvalidKeyException if the private key is invalid.

@@ -21,8 +21,7 @@ const val KEYSTORE_TYPE = "JKS"
  * @param keyStoreFilePath location of KeyStore file.
  * @param storePassword password to open the store. This does not have to be the same password as any keys stored,
  * but for SSL purposes this is recommended.
- *
- * Returns the [KeyStore] opened/created.
+ * @return the [KeyStore] opened/created.
  */
 fun loadOrCreateKeyStore(keyStoreFilePath: Path, storePassword: String): KeyStore {
     val pass = storePassword.toCharArray()
@@ -42,8 +41,7 @@ fun loadOrCreateKeyStore(keyStoreFilePath: Path, storePassword: String): KeyStor
  * @param keyStoreFilePath location of KeyStore file which must exist, or this will throw FileNotFoundException.
  * @param storePassword password to open the store. This does not have to be the same password as any keys stored,
  * but for SSL purposes this is recommended.
- *
- * Returns the [KeyStore] opened.
+ * @return the [KeyStore] opened.
  * @throws IOException if there was an error reading the key store from the file.
  * @throws KeyStoreException if the password is incorrect or the key store is damaged.
  */
@@ -57,8 +55,7 @@ fun loadKeyStore(keyStoreFilePath: Path, storePassword: String): KeyStore {
  * @param input stream containing a KeyStore e.g. loaded from a resource file.
  * @param storePassword password to open the store. This does not have to be the same password as any keys stored,
  * but for SSL purposes this is recommended.
- *
- * Returns the [KeyStore] opened.
+ * @return the [KeyStore] opened.
  * @throws IOException if there was an error reading the key store from the stream.
  * @throws KeyStoreException if the password is incorrect or the key store is damaged.
  */
@@ -127,7 +124,7 @@ fun KeyStore.getCertificateAndKeyPair(alias: String, keyPassword: String): Certi
 /**
  * Extract public X509 certificate from a KeyStore file assuming storage alias is known.
  * @param alias The name to lookup the Key and Certificate chain from.
- * Returns the [X509Certificate] found in the [KeyStore] under the specified alias.
+ * @return the [X509Certificate] found in the [KeyStore] under the specified alias.
  */
 fun KeyStore.getX509Certificate(alias: String): X509Certificate {
     val certificate = getCertificate(alias) ?: throw IllegalArgumentException("No certificate under alias \"$alias\".")
@@ -141,8 +138,7 @@ fun KeyStore.getX509Certificate(alias: String): X509Certificate {
  * To convert to a supported implementation, an encode->decode method is applied to the keystore's returned object.
  * @param alias The name to lookup the Key.
  * @param keyPassword Password to unlock the private key entries.
- *
- * Returns the requested private key in supported type.
+ * @return the requested private key in supported type.
  * @throws KeyStoreException if the keystore has not been initialized.
  * @throws NoSuchAlgorithmException if the algorithm for recovering the key cannot be found (not supported from the Keystore provider).
  * @throws UnrecoverableKeyException if the key cannot be recovered (e.g., the given password is wrong).

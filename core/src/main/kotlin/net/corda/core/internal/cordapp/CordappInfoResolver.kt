@@ -35,13 +35,13 @@ object CordappInfoResolver {
         }
     }
 
-    /*
+    /**
      * This should only be used when making a change that would break compatibility with existing CorDapps. The change
      * can then be version-gated, meaning the old behaviour is used if the calling CorDapp's target version is lower
      * than the platform version that introduces the new behaviour.
      * In situations where a `[CordappProvider]` is available the CorDapp context should be obtained from there.
      *
-     * Returns information about the CorDapp from which the invoker is called, null if called outside a CorDapp or the
+     * @return information about the CorDapp from which the invoker is called, null if called outside a CorDapp or the
      * calling CorDapp cannot be reliably determined.
      */
     fun getCorDappInfo(): CordappImpl.Info? = cordappInfoResolver()

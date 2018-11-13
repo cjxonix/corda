@@ -251,7 +251,7 @@ class InterestRateSwap : Contract {
     ) {
         /**
          * Gets the date of the next fixing.
-         * Returns LocalDate or null if no more fixings.
+         * @return LocalDate or null if no more fixings.
          */
         fun nextFixingDate(): LocalDate? {
             return floatingLegPaymentSchedule.

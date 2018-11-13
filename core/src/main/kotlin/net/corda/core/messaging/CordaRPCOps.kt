@@ -326,7 +326,7 @@ interface CordaRPCOps : RPCOps {
      * a well known identity is passed in.
      *
      * @param party identity to determine well known identity for.
-     * Returns the well known identity, if found.
+     * @return the well known identity, if found.
      */
     fun wellKnownPartyFromAnonymous(party: AbstractParty): Party?
 
@@ -339,7 +339,7 @@ interface CordaRPCOps : RPCOps {
     /**
      * Get a notary identity by name.
      *
-     * Returns the notary identity, or null if there is no notary by that name. Note that this will return null if there
+     * @return the notary identity, or null if there is no notary by that name. Note that this will return null if there
      * is a peer with that name but they are not a recognised notary service.
      */
     fun notaryPartyFromX500Name(x500Name: CordaX500Name): Party?
@@ -362,7 +362,7 @@ interface CordaRPCOps : RPCOps {
      * Notice that when there are more than one node for a given name (in case of distributed services) first service node
      * found will be returned.
      *
-     * Returns the [NodeInfo] if available.
+     * @return the [NodeInfo] if available.
      */
     fun nodeInfoFromParty(party: AbstractParty): NodeInfo?
 
@@ -415,7 +415,7 @@ interface CordaRPCOps : RPCOps {
      * Returns whether the node is waiting for pending flows to complete before shutting down.
      * Disabling draining mode cancels this state.
      *
-     * Returns whether the node will shutdown when the pending flows count reaches zero.
+     * @return whether the node will shutdown when the pending flows count reaches zero.
      */
     fun isWaitingForShutdown(): Boolean
 }

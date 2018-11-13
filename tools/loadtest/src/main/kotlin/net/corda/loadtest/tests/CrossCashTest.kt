@@ -298,10 +298,11 @@ val crossCashTest = LoadTest<CrossCashCommand, CrossCashState>(
 )
 
 /**
+ * Method to search for a state.
  * @param searchedState The state to search for.
  * @param baseState The consistent base knowledge.
  * @param diffQueues The queues to interleave.
- * Returns a [List] of (node -> number of txs consumed) maps, each of which results in [searchedState].
+ * @return a [List] of (node -> number of txs consumed) maps, each of which results in [searchedState].
  */
 private fun <A> searchForState(
         searchedState: Map<A, Long>,
@@ -322,7 +323,7 @@ private fun <A> searchForState(
             var currentState = state
             queue.forEachIndexed { index, (issuer, quantity) ->
                 consumedTxs[originator] = index + 1
-                // Prune search if we exceeded the searched quantity anyway
+                // Prune search if we exceeded the searched quantity anyway.
                 currentState = applyDiff(issuer, quantity, currentState, searchedState) ?: return
                 searchForStateHelper(currentState, diffIx + 1, consumedTxs, matched)
             }
