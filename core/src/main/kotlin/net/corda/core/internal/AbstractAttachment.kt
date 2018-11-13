@@ -46,6 +46,9 @@ abstract class AbstractAttachment(dataLoader: () -> ByteArray) : Attachment {
         openAsJAR().use(JarSignatureCollector::collectSigners)
     }
 
+    // TODO: read from Jar manifest metadata
+    override val version = "1.0"
+
     override fun equals(other: Any?) = other === this || other is Attachment && other.id == this.id
     override fun hashCode() = id.hashCode()
     override fun toString() = "${javaClass.simpleName}(id=$id)"

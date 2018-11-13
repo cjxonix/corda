@@ -3,6 +3,7 @@
 package net.corda.core.node.services.vault
 
 import net.corda.core.DoNotImplement
+import net.corda.core.contracts.ContractClassName
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateRef
 import net.corda.core.contracts.UniqueIdentifier
@@ -11,6 +12,7 @@ import net.corda.core.node.services.Vault
 import net.corda.core.schemas.PersistentState
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.OpaqueBytes
+import java.security.PublicKey
 import java.time.Instant
 import java.util.*
 import javax.persistence.criteria.Predicate
@@ -275,7 +277,10 @@ sealed class AttachmentQueryCriteria : GenericQueryCriteria<AttachmentQueryCrite
      */
     data class AttachmentsQueryCriteria @JvmOverloads constructor (val uploaderCondition: ColumnPredicate<String>? = null,
                                                                    val filenameCondition: ColumnPredicate<String>? = null,
-                                                                   val uploadDateCondition: ColumnPredicate<Instant>? = null) : AttachmentQueryCriteria() {
+                                                                   val uploadDateCondition: ColumnPredicate<Instant>? = null,
+                                                                   val contractClassNamesCondition: ColumnPredicate<List<ContractClassName>>? = null,
+                                                                   val signersCondition: ColumnPredicate<List<PublicKey>>? = null,
+                                                                   val isSignedCondition: ColumnPredicate<Boolean>? = null) : AttachmentQueryCriteria() {
         override fun visit(parser: AttachmentsQueryCriteriaParser): Collection<Predicate> {
             return parser.parseCriteria(this)
         }

@@ -32,6 +32,7 @@ class AttachmentTest {
             override fun open() = inputStream
             override val signers get() = throw UnsupportedOperationException()
             override val size: Int = 512
+            override val version: String = "1.0"
         }
         try {
             attachment.openAsJAR()

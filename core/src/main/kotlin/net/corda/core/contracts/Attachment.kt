@@ -61,4 +61,9 @@ interface Attachment : NamedByHash {
      * Attachment size in bytes.
      */
     val size: Int
+
+    /**
+     * Attachment version (TBD: extracted from Jar Manifest version-id)
+     */
+    val version: String
 }

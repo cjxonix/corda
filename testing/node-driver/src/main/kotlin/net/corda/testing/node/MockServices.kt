@@ -1,5 +1,6 @@
 package net.corda.testing.node
 
+import com.codahale.metrics.MetricRegistry
 import com.google.common.collect.MutableClassToInstanceMap
 import net.corda.core.contracts.ContractClassName
 import net.corda.core.contracts.StateRef
@@ -24,6 +25,7 @@ import net.corda.node.internal.ServicesForResolutionImpl
 import net.corda.node.internal.cordapp.JarScanningCordappLoader
 import net.corda.node.services.api.*
 import net.corda.node.services.identity.InMemoryIdentityService
+import net.corda.node.services.persistence.NodeAttachmentService
 import net.corda.node.services.schema.NodeSchemaService
 import net.corda.node.services.transactions.InMemoryTransactionVerifierService
 import net.corda.node.services.vault.NodeVaultService
@@ -34,6 +36,7 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.TestIdentity
 import net.corda.testing.internal.DEV_ROOT_CA
 import net.corda.testing.internal.MockCordappProvider
+import net.corda.testing.internal.TestingNamedCacheFactory
 import net.corda.testing.internal.configureDatabase
 import net.corda.testing.node.internal.*
 import net.corda.testing.services.MockAttachmentStorage
@@ -137,8 +140,47 @@ open class MockServices private constructor(
             return Pair(database, mockService)
         }
 
+        @JvmStatic
+        @JvmOverloads
+        fun makeTestDatabaseAndAttachmentStorageAndMockServices(cordappPackages: List<String>,
+                                            identityService: IdentityService,
+                                            initialIdentity: TestIdentity,
+                                            networkParameters: NetworkParameters = testNetworkParameters(),
+                                            vararg moreKeys: KeyPair): Pair<CordaPersistence, MockServices> {
+
+            val cordappLoader = cordappLoaderForPackages(cordappPackages)
+            val dataSourceProps = makeTestDataSourceProperties()
+            val schemaService = NodeSchemaService(cordappLoader.cordappSchemas)
+            val database = configureDatabase(dataSourceProps, DatabaseConfig(), identityService::wellKnownPartyFromX500Name, identityService::wellKnownPartyFromAnonymous, schemaService, schemaService.internalSchemas())
+            val mockService = database.transaction {
+                object : MockServices(cordappLoader, identityService, networkParameters, initialIdentity, moreKeys) {
+                    override val vaultService: VaultService = makeVaultService(schemaService, database)
+
+                    override fun recordTransactions(statesToRecord: StatesToRecord, txs: Iterable<SignedTransaction>) {
+                        ServiceHubInternal.recordTransactions(statesToRecord, txs,
+                                validatedTransactions as WritableTransactionStorage,
+                                mockStateMachineRecordedTransactionMappingStorage,
+                                vaultService as VaultServiceInternal,
+                                database)
+                    }
+
+//                    override val attachments: AttachmentStorage = makeAttachmentService(database)
+                    override fun jdbcSession(): Connection = database.createSession()
+                }
+            }
+            return Pair(database, mockService)
+        }
+
         // Because Kotlin is dumb and makes not publicly visible objects public, thus changing the public API.
         private val mockStateMachineRecordedTransactionMappingStorage = MockStateMachineRecordedTransactionMappingStorage()
+    }
+
+    internal fun makeAttachmentService(database: CordaPersistence): AttachmentStorage {
+        return NodeAttachmentService(MetricRegistry(), TestingNamedCacheFactory(), database).also {
+            database.transaction {
+                it.start()
+            }
+        }
     }
 
     private class MockStateMachineRecordedTransactionMappingStorage : StateMachineRecordedTransactionMappingStorage {

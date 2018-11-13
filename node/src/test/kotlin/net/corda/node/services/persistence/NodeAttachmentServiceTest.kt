@@ -81,6 +81,9 @@ class NodeAttachmentServiceTest {
 
     @After
     fun tearDown() {
+        dir.list { subdir ->
+            subdir.forEach(Path::deleteRecursively)
+        }
         database.close()
     }
 
@@ -210,6 +213,35 @@ class NodeAttachmentServiceTest {
         assertEquals(
                 listOf(hashB, hashC),
                 storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(Builder.like("%uploader%")))
+        )
+    }
+
+    @Test
+    fun `contract class and signing metadata can be used to search`() {
+
+        val (sampleJar, _) = makeTestJar()
+        val contractJar = makeTestContractJar("com.example.MyContract")
+        val (signedContractJar, publicKey) = makeTestSignedContractJar("com.example.MyContract")
+        val (anotherSignedContractJar, _) = makeTestSignedContractJar("com.example.AnotherContract")
+
+        sampleJar.read { storage.importAttachment(it, "uploaderA", "sample.jar") }
+        contractJar.read { storage.importAttachment(it, "uploaderB", "contract.jar") }
+        signedContractJar.read { storage.importAttachment(it, "uploaderC", "contract-signed.jar") }
+        anotherSignedContractJar.read { storage.importAttachment(it, "uploaderD", "another-contract-signed.jar") }
+
+        assertEquals(
+                2,
+                storage.queryAttachmentsFully(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")))).size
+        )
+
+        assertEquals(
+                1,
+                storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(signersCondition = Builder.equal(listOf(publicKey)))).size
+        )
+
+        assertEquals(
+                2,
+                storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(isSignedCondition = Builder.equal(true))).size
         )
     }
 
@@ -369,6 +401,19 @@ class NodeAttachmentServiceTest {
     }
 
     companion object {
+        private val dir = Files.createTempDirectory(NodeAttachmentServiceTest::class.simpleName)
+
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            dir.deleteRecursively()
+        }
+
         private fun makeTestJar(output: OutputStream, extraEntries: List<Pair<String, String>> = emptyList()) {
             output.use {
                 val jar = JarOutputStream(it)
@@ -394,9 +439,9 @@ class NodeAttachmentServiceTest {
             return workingDir.resolve(jarName) to signer
         }
 
-        private fun makeTestContractJar(workingDir: Path, contractName: String): String {
+        private fun makeTestContractJar(workingDir: Path, contractName: String, signed: Boolean = false): String {
             val packages = contractName.split(".")
-            val jarName = "testattachment.jar"
+            val jarName = "attachment-${packages.last()}-$signed"
             val className = packages.last()
             createTestClass(workingDir, className, packages.subList(0, packages.size - 1))
             workingDir.createJar(jarName, "${contractName.replace(".", "/")}.class")
@@ -424,7 +469,8 @@ class NodeAttachmentServiceTest {
             fileManager.setLocation(StandardLocation.CLASS_OUTPUT, listOf(workingDir.toFile()))
 
             compiler.getTask(System.out.writer(), fileManager, null, null, null, listOf(source)).call()
-            return Paths.get(fileManager.list(StandardLocation.CLASS_OUTPUT, "", setOf(JavaFileObject.Kind.CLASS), true).single().name)
+            val outFile = fileManager.getFileForInput(StandardLocation.CLASS_OUTPUT, packages.joinToString("."), "$className.class")
+            return Paths.get(outFile.name)
         }
     }
 

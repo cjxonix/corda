@@ -22,7 +22,9 @@ class ContractAttachment @JvmOverloads constructor(
 
     val allContracts: Set<ContractClassName> get() = additionalContracts + contract
 
+    val isSigned = signers.isNotEmpty()
+
     override fun toString(): String {
-        return "ContractAttachment(attachment=${attachment.id}, contracts='$allContracts', uploader='$uploader')"
+        return "ContractAttachment(attachment=${attachment.id}, contracts='$allContracts', uploader='$uploader', signed='$isSigned)"
     }
 }
