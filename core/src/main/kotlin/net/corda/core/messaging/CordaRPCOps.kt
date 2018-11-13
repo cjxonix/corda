@@ -271,7 +271,7 @@ interface CordaRPCOps : RPCOps {
     /**
      * Attempts to kill a flow. This is not a clean termination and should be reserved for exceptional cases such as stuck fibers.
      *
-     * Returns whether the flow existed and was killed.
+     * @return whether the flow existed and was killed.
      */
     fun killFlow(id: StateMachineRunId): Boolean
 
