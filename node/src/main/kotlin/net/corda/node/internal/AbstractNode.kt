@@ -809,11 +809,15 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
     private fun obtainIdentity(): Pair<PartyAndCertificate, KeyPair> {
         val legalIdentityPrivateKeyAlias = "$NODE_IDENTITY_ALIAS_PREFIX-private-key"
 
-        if (!cryptoService.containsKey(legalIdentityPrivateKeyAlias)) {
+        var signingCertificateStore = configuration.signingCertificateStore.get()
+        if (!cryptoService.containsKey(legalIdentityPrivateKeyAlias) && !signingCertificateStore.contains(legalIdentityPrivateKeyAlias)) {
             log.info("$legalIdentityPrivateKeyAlias not found in key store, generating fresh key!")
             storeLegalIdentity(legalIdentityPrivateKeyAlias)
+        } else if (cryptoService.containsKey(legalIdentityPrivateKeyAlias) || signingCertificateStore.contains(legalIdentityPrivateKeyAlias)){
+            val keyExistsIn: String = if (cryptoService.containsKey(legalIdentityPrivateKeyAlias)) "CryptoService" else "signingCertificateStore"
+            throw IllegalStateException("CryptoService and signingCertificateStore are not aligned, an entry for alias: $legalIdentityPrivateKeyAlias is only found in $keyExistsIn")
         }
-        val signingCertificateStore = configuration.signingCertificateStore.get()
+        signingCertificateStore = configuration.signingCertificateStore.get()
         val x509Cert = signingCertificateStore.query { getCertificate(legalIdentityPrivateKeyAlias) }
 
         // TODO: Use configuration to indicate composite key should be used instead of public key for the identity.
@@ -865,7 +869,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         val signingCertificateStore = configuration.signingCertificateStore.get()
 
         val nodeCaCertPath = signingCertificateStore.value.getCertificateChain(X509Utilities.CORDA_CLIENT_CA)
-        val nodeCaCert = nodeCaCertPath[0] // This should be the same with signingCertificateStore[alias]
+        val nodeCaCert = nodeCaCertPath[0] // This should be the same with signingCertificateStore[alias].
 
         val identityCert = X509Utilities.createCertificate(
                 CertificateType.LEGAL_IDENTITY,
