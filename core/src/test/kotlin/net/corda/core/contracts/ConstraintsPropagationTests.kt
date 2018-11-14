@@ -229,8 +229,6 @@ class ConstraintsPropagationTests {
     @Test
     fun `Signature Constraints canBeTransitionedFrom Hash Constraints behaves as expected`() {
 
-        // setup
-
         // signature constrained attachment
         val attachmentSignatureConstraintsJar = mock<AttachmentWithContext>()
         whenever(attachmentSignatureConstraintsJar.signers).thenReturn(listOf(ALICE_PARTY.owningKey))

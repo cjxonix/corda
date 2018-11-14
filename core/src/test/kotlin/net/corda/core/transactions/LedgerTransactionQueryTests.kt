@@ -2,79 +2,42 @@ package net.corda.core.transactions
 
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.whenever
-import net.corda.core.JarSignatureTestUtils.createJar
-import net.corda.core.JarSignatureTestUtils.generateKey
-import net.corda.core.JarSignatureTestUtils.signJar
 import net.corda.core.contracts.*
 import net.corda.core.crypto.generateKeyPair
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
-import net.corda.core.internal.delete
-import net.corda.core.internal.deleteRecursively
-import net.corda.core.internal.div
-import net.corda.core.internal.inputStream
-import net.corda.finance.contracts.asset.Cash
 import net.corda.node.services.api.IdentityServiceInternal
 import net.corda.testing.contracts.DummyContract
 import net.corda.testing.core.*
 import net.corda.testing.internal.rigorousMock
-import net.corda.testing.node.MockServices.Companion.makeTestDatabaseAndAttachmentStorageAndMockServices
-import org.junit.*
-import java.io.OutputStream
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.security.PublicKey
+import net.corda.testing.node.MockServices
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 import java.util.function.Predicate
-import java.util.jar.JarEntry
-import java.util.jar.JarOutputStream
-import javax.tools.JavaFileObject
-import javax.tools.SimpleJavaFileObject
-import javax.tools.StandardLocation
-import javax.tools.ToolProvider
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class LedgerTransactionQueryTests {
-//    companion object {
-//        private val DUMMY_NOTARY = TestIdentity(DUMMY_NOTARY_NAME, 20).party
-//        private val ALICE_NAME = CordaX500Name("MegaCorp", "London", "GB")
-//    }
+    companion object {
+        private val DUMMY_NOTARY = TestIdentity(DUMMY_NOTARY_NAME, 20).party
+    }
 
     @Rule
     @JvmField
     val testSerialization = SerializationEnvironmentRule()
     private val keyPair = generateKeyPair()
-    private val servicesAndDatabase = makeTestDatabaseAndAttachmentStorageAndMockServices(
-            listOf("net.corda.testing.contracts"),
+    private val services = MockServices(listOf("net.corda.testing.contracts"), CordaX500Name("MegaCorp", "London", "GB"),
             rigorousMock<IdentityServiceInternal>().also {
-                doReturn(ALICE.party).whenever(it).partyFromKey(ALICE.publicKey)
                 doReturn(null).whenever(it).partyFromKey(keyPair.public)
-            },  ALICE, moreKeys = keyPair)
-    private val services = servicesAndDatabase.second
-    private val database = servicesAndDatabase.first
-    private val storage = services.attachments
-
+            }, keyPair)
     private val identity: Party = services.myInfo.singleIdentity()
 
     @Before
     fun setup() {
         services.addMockCordapp(DummyContract.PROGRAM_ID)
-
-        val jarName = makeTestContractJar(Cash.PROGRAM_ID)
-        val attachmentId = storage.importAttachment(dir.resolve(jarName).inputStream(), "test", null)
-
-        val jarAndSigner = makeTestSignedContractJar(Cash.PROGRAM_ID)
-        val signedJar = jarAndSigner.first
-        val attachmentId2 = storage.importAttachment(signedJar.inputStream(), "test", null)
-    }
-
-    @After
-    fun tearDown() {
-        database.close()
     }
 
     interface Commands {
@@ -342,83 +305,5 @@ class LedgerTransactionQueryTests {
         assertEquals(ltx.getCommand(4), intCmd1)
         val intCmd2 = ltx.findCommand<Commands.Cmd2> { it.id == 3 }
         assertEquals(ltx.getCommand(7), intCmd2)
-    }
-    companion object {
-        private val DUMMY_NOTARY = TestIdentity(DUMMY_NOTARY_NAME, 20).party
-        private val ALICE_NAME = CordaX500Name("MegaCorp", "London", "GB")
-        private val ALICE = TestIdentity(ALICE_NAME, 20)
-
-        private val dir = Files.createTempDirectory(LedgerTransactionQueryTests::class.simpleName)
-
-        @BeforeClass
-        @JvmStatic
-        fun beforeClass() {
-        }
-
-        @AfterClass
-        @JvmStatic
-        fun afterClass() {
-            dir.deleteRecursively()
-        }
-
-        private fun makeTestJar(output: OutputStream, extraEntries: List<Pair<String, String>> = emptyList()) {
-            output.use {
-                val jar = JarOutputStream(it)
-                jar.putNextEntry(JarEntry("test1.txt"))
-                jar.write("This is some useful content".toByteArray())
-                jar.closeEntry()
-                jar.putNextEntry(JarEntry("test2.txt"))
-                jar.write("Some more useful content".toByteArray())
-                extraEntries.forEach {
-                    jar.putNextEntry(JarEntry(it.first))
-                    jar.write(it.second.toByteArray())
-                }
-                jar.closeEntry()
-            }
-        }
-
-        private fun makeTestSignedContractJar(contractName: String): Pair<Path, PublicKey> {
-            val alias = "testAlias"
-            val pwd = "testPassword"
-            dir.generateKey(alias, pwd, ALICE_NAME.toString())
-            val jarName = makeTestContractJar(contractName)
-            val signer = dir.signJar(jarName, alias, pwd)
-            (dir / "_shredder").delete()
-            (dir / "_teststore").delete()
-            return dir.resolve(jarName) to signer
-        }
-
-        private fun makeTestContractJar(contractName: String): String {
-            val packages = contractName.split(".")
-            val jarName = "testattachment.jar"
-            val className = packages.last()
-            createTestClass(className, packages.subList(0, packages.size - 1))
-            dir.createJar(jarName, "${contractName.replace(".", "/")}.class")
-            return jarName
-        }
-
-        private fun createTestClass(className: String, packages: List<String>): Path {
-            val newClass = """package ${packages.joinToString(".")};
-                import net.corda.core.contracts.*;
-                import net.corda.core.transactions.*;
-
-                public class $className implements Contract {
-                    @Override
-                    public void verify(LedgerTransaction tx) throws IllegalArgumentException {
-                    }
-                }
-            """.trimIndent()
-            val compiler = ToolProvider.getSystemJavaCompiler()
-            val source = object : SimpleJavaFileObject(URI.create("string:///${packages.joinToString("/")}/${className}.java"), JavaFileObject.Kind.SOURCE) {
-                override fun getCharContent(ignoreEncodingErrors: Boolean): CharSequence {
-                    return newClass
-                }
-            }
-            val fileManager = compiler.getStandardFileManager(null, null, null)
-            fileManager.setLocation(StandardLocation.CLASS_OUTPUT, listOf(dir.toFile()))
-
-            val compile = compiler.getTask(System.out.writer(), fileManager, null, null, null, listOf(source)).call()
-            return Paths.get(fileManager.list(StandardLocation.CLASS_OUTPUT, "", setOf(JavaFileObject.Kind.CLASS), true).single().name)
-        }
     }
 }

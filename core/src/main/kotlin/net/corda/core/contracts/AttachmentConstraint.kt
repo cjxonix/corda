@@ -74,10 +74,11 @@ interface AttachmentConstraint {
                 attachment.signers.isNotEmpty() && output.key.keys.containsAll(attachment.signers)
 
             // Transition from Hash to Signature constraint (via CZ whitelisting) requires
-            // 1. Both original (unsigned) and signed hashcode of hash-constrained Contract JARS are registered in the NP CZ whitelist
+            // 1. Hashcode of both original (unsigned) and signed contract JARS are registered in the NP CZ whitelist
             //    [prerequisite: both JARs have been registered with CZ whitelist]
-            // 2. Signers of both hash-constrained and signature-constrained JARS are the same (as per WhitelistConstraint to the SignatureConstraint check)
-            //    Signers own the package namespace
+            // 2. Signer(s) of signature-constrained JAR is same as signer of registered package namespace
+            //    [prerequisite: corDapp developer registers package namespace in Network Parameters]
+            // 3. Signer(s) associated with signature constraint matche those of signed contract JAR.
             input is HashAttachmentConstraint && output is SignatureAttachmentConstraint -> {
                 val signedAttachment = attachment.signedContractAttachment
                 signedAttachment?.let {
@@ -121,8 +122,6 @@ data class HashAttachmentConstraint(val attachmentId: SecureHash) : AttachmentCo
     override fun isSatisfiedBy(attachment: Attachment): Boolean {
         return if (attachment is AttachmentWithContext) {
             attachment.id == attachmentId && isUploaderTrusted(attachment.contractAttachment.uploader)
-            // TODO: add this check if we can implement the function: hashCode[stripped-signed-jar] = hashCode[unsigned-jar]
-//            attachment.stripSigners().id == attachmentId
         } else false
     }
 }

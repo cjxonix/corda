@@ -153,18 +153,14 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
         val signatureConstrainedOutputs = outputs.filter { it.constraint is SignatureAttachmentConstraint }
         val hashConstrainedInputs = resolvedInputs.filter { it.state.constraint is HashAttachmentConstraint }
         val extraAttachmentIds =
-                if (hashConstrainedInputs.isNotEmpty() && signatureConstrainedOutputs.isNotEmpty()) {
-                    val contractClassNames = hashConstrainedInputs.map { it.state.contract }
-                    println("Ledger txn: contractClassNames = $contractClassNames")
-                    //        val result = attachmentStorage.queryAttachmentsMetadata(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNames = Builder.equal(contractClassNames)))
-                    val extraAttachmentIds = attachmentStorage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(contractClassNames)))
-                    println("Ledger txn: extraAttachmentIds = $extraAttachmentIds")
-//                val extractAttachments = extraAttachmentIds.map {
-//                    resolveAttachment(it) ?: throw AttachmentResolutionException(it)
-//                }
-//                println("Ledger txn: extractAttachments = $extractAttachments")
-                    extraAttachmentIds
-                } else emptyList()
+            if (hashConstrainedInputs.isNotEmpty() && signatureConstrainedOutputs.isNotEmpty()) {
+                val contractClassNames = hashConstrainedInputs.map { it.state.contract }
+                println("Ledger txn: contractClassNames = $contractClassNames")
+                // TODO: query by Contract Class AND VERSION
+                val extraAttachmentIds = attachmentStorage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(contractClassNames)))
+                println("Ledger txn: extraAttachmentIds = $extraAttachmentIds")
+                extraAttachmentIds
+            } else emptyList()
 
         val attachments = (resolvedAttachments + extraAttachmentIds).map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }
 

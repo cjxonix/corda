@@ -368,7 +368,13 @@ class NodeAttachmentService(
         }
     }
 
-    override fun queryAttachments(criteria: AttachmentQueryCriteria, sorting: AttachmentSort?): List<AttachmentId> {
+    override fun queryAttachments(criteria: AttachmentQueryCriteria, sorting: AttachmentSort?): List<AttachmentId> =
+            queryAttachmentsInternal(criteria, sorting)
+
+    override fun queryAttachmentsFully(criteria: AttachmentQueryCriteria, sorting: AttachmentSort?): List<Attachment> =
+            queryAttachmentsInternal(criteria, sorting).map { loadAttachmentContent(it) }.mapNotNull { it?.first }
+
+    private fun queryAttachmentsInternal(criteria: AttachmentQueryCriteria, sorting: AttachmentSort?): List<AttachmentId>  {
         log.info("Attachment query criteria: $criteria, sorting: $sorting")
         return database.transaction {
             val session = currentDBSession()
@@ -387,28 +393,6 @@ class NodeAttachmentService(
 
             // execution
             query.resultList.map { AttachmentId.parse(it.attId) }
-        }
-    }
-
-    override fun queryAttachmentsFully(criteria: AttachmentQueryCriteria, sorting: AttachmentSort?): List<Attachment> {
-        log.info("Attachment query criteria: $criteria, sorting: $sorting")
-        return database.transaction {
-            val session = currentDBSession()
-            val criteriaBuilder = session.criteriaBuilder
-
-            val criteriaQuery = criteriaBuilder.createQuery(DBAttachment::class.java)
-            val root = criteriaQuery.from(DBAttachment::class.java)
-
-            val criteriaParser = HibernateAttachmentQueryCriteriaParser(criteriaBuilder, criteriaQuery, root)
-
-            // parse criteria and build where predicates
-            criteriaParser.parse(criteria, sorting)
-
-            // prepare query for execution
-            val query = session.createQuery(criteriaQuery)
-
-            // execution
-            query.resultList.map { loadAttachmentContent(AttachmentId.parse(it.attId)) }.mapNotNull { it?.first }
         }
     }
 }
