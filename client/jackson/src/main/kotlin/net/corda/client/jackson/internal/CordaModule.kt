@@ -39,6 +39,7 @@ import net.corda.core.utilities.parseAsHex
 import net.corda.core.utilities.toHexString
 import net.corda.serialization.internal.AllWhitelist
 import net.corda.serialization.internal.amqp.*
+import net.corda.serialization.internal.model.LocalTypeInformation
 import java.math.BigDecimal
 import java.security.PublicKey
 import java.security.cert.CertPath
@@ -92,10 +93,17 @@ private class CordaSerializableBeanSerializerModifier : BeanSerializerModifier()
                                   beanProperties: MutableList<BeanPropertyWriter>): MutableList<BeanPropertyWriter> {
         val beanClass = beanDesc.beanClass
         if (hasCordaSerializable(beanClass) && beanClass.kotlinObjectInstance == null) {
-            val ctor = constructorForDeserialization(beanClass)
-            val amqpProperties = propertiesForSerialization(ctor, beanClass, serializerFactory)
-                    .serializationOrder
-                    .mapNotNull { if (it.isCalculated) null else it.serializer.name }
+            val typeInformation = serializerFactory.getTypeInformation(beanClass)
+            val properties = when(typeInformation) {
+                is LocalTypeInformation.Composable -> typeInformation.properties
+                is LocalTypeInformation.Abstract -> typeInformation.properties
+                is LocalTypeInformation.AnInterface -> typeInformation.properties
+                is LocalTypeInformation.NonComposable -> typeInformation.properties
+                else -> emptyMap()
+            }
+            val amqpProperties = properties.mapNotNull { (name, property) ->
+                if (property.isCalculated) null else name
+            }
             val propertyRenames = beanDesc.findProperties().associateBy({ it.name }, { it.internalName })
             (amqpProperties - propertyRenames.values).let {
                 check(it.isEmpty()) { "Jackson didn't provide serialisers for $it" }
