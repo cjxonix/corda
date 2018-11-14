@@ -812,8 +812,8 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         var signingCertificateStore = configuration.signingCertificateStore.get()
         if (!cryptoService.containsKey(legalIdentityPrivateKeyAlias) && !signingCertificateStore.contains(legalIdentityPrivateKeyAlias)) {
             log.info("$legalIdentityPrivateKeyAlias not found in key store, generating fresh key!")
-            storeLegalIdentity(legalIdentityPrivateKeyAlias)
-            signingCertificateStore = configuration.signingCertificateStore.get() // We need to resync after storeLegalIdentity.
+            createAndStoreLegalIdentity(legalIdentityPrivateKeyAlias)
+            signingCertificateStore = configuration.signingCertificateStore.get() // We need to resync after [createAndStoreLegalIdentity].
         } else {
             checkAliasMismatch(legalIdentityPrivateKeyAlias, signingCertificateStore)
         }
@@ -874,7 +874,7 @@ abstract class AbstractNode<S>(val configuration: NodeConfiguration,
         return Pair(PartyAndCertificate(certPath), keyPair)
     }
 
-    private fun storeLegalIdentity(alias: String): PartyAndCertificate {
+    private fun createAndStoreLegalIdentity(alias: String): PartyAndCertificate {
         val legalIdentityPublicKey = generateKeyPair(alias)
         val signingCertificateStore = configuration.signingCertificateStore.get()
 
