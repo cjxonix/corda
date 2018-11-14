@@ -4,10 +4,14 @@ import net.corda.core.internal.JarSignatureCollector
 import net.corda.core.internal.div
 import net.corda.nodeapi.internal.crypto.loadKeyStore
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.PublicKey
+import java.util.jar.Attributes
 import java.util.jar.JarInputStream
+import java.util.jar.JarOutputStream
+import java.util.jar.Manifest
 import kotlin.test.assertEquals
 
 object JarSignatureTestUtils {
@@ -46,4 +50,41 @@ object JarSignatureTestUtils {
 
     fun Path.getJarSigners(fileName: String) =
             JarInputStream(FileInputStream((this / fileName).toFile())).use(JarSignatureCollector::collectSigners)
+
+    fun Path.printJar(fileName: String) {
+        JarInputStream(FileInputStream((this / fileName).toFile())).use {
+            println("Manifest = ${it.manifest.mainAttributes.toList()}")
+            var count = 0
+            while (true) {
+                val entry = it.nextJarEntry ?: break
+                println("$entry, timestamps: CT=${entry.creationTime}, LAT=${entry.lastAccessTime}, LMT=${entry.lastModifiedTime}")
+                count++
+            }
+            println("\n$fileName has $count entries\n")
+        }
+    }
+
+    fun Path.addManifest(fileName: String, vararg entry: Pair<Attributes.Name, String>) {
+        JarInputStream(FileInputStream((this / fileName).toFile())).use { input ->
+            val manifest = input.manifest ?: Manifest()
+            entry.forEach { (attributeName, value) ->
+                // eg. Attributes.Name.IMPLEMENTATION_VERSION, version
+                manifest.mainAttributes[attributeName] = value
+            }
+            val output = JarOutputStream(FileOutputStream((this / fileName).toFile()), manifest)
+            var entry= input.nextEntry
+            val buffer = ByteArray(1 shl 14)
+            while (true) {
+                output.putNextEntry(entry)
+                var nr: Int
+                while (true) {
+                    nr = input.read(buffer)
+                    if (nr < 0) break
+                    output.write(buffer, 0, nr)
+                }
+                entry = input.nextEntry ?: break
+            }
+            output.close()
+        }
+    }
 }

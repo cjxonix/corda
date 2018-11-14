@@ -6,13 +6,18 @@ import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.whenever
+import net.corda.core.JarSignatureTestUtils.createJar
+import net.corda.core.JarSignatureTestUtils.addManifest
+import net.corda.core.JarSignatureTestUtils.generateKey
+import net.corda.core.JarSignatureTestUtils.signJar
+import net.corda.core.JarSignatureTestUtils.printJar
 import net.corda.core.contracts.ContractAttachment
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.sha256
 import net.corda.core.flows.FlowLogic
 import net.corda.core.internal.*
 import net.corda.core.node.ServicesForResolution
-import net.corda.core.node.services.vault.AttachmentQueryCriteria
+import net.corda.core.node.services.vault.AttachmentQueryCriteria.AttachmentsQueryCriteria
 import net.corda.core.node.services.vault.AttachmentSort
 import net.corda.core.node.services.vault.Builder
 import net.corda.core.node.services.vault.Sort
@@ -41,6 +46,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.*
 import java.security.PublicKey
+import java.util.jar.Attributes
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 import javax.tools.JavaFileObject
@@ -207,41 +213,60 @@ class NodeAttachmentServiceTest {
 
         assertEquals(
                 listOf(hashB),
-                storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(Builder.equal("uploaderB")))
+                storage.queryAttachments(AttachmentsQueryCriteria(Builder.equal("uploaderB")))
         )
 
         assertEquals(
                 listOf(hashB, hashC),
-                storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(Builder.like("%uploader%")))
+                storage.queryAttachments(AttachmentsQueryCriteria(Builder.like("%uploader%")))
         )
     }
 
     @Test
-    fun `contract class and signing metadata can be used to search`() {
-
+    fun `contract class, versioning and signing metadata can be used to search`() {
         val (sampleJar, _) = makeTestJar()
         val contractJar = makeTestContractJar("com.example.MyContract")
         val (signedContractJar, publicKey) = makeTestSignedContractJar("com.example.MyContract")
         val (anotherSignedContractJar, _) = makeTestSignedContractJar("com.example.AnotherContract")
+        val contractJarV2 = makeTestContractJar("com.example.MyContract", version = "2.0")
+        val (signedContractJarV2, publicKeyV2) = makeTestSignedContractJar("com.example.MyContract", version = "2.0")
 
         sampleJar.read { storage.importAttachment(it, "uploaderA", "sample.jar") }
         contractJar.read { storage.importAttachment(it, "uploaderB", "contract.jar") }
         signedContractJar.read { storage.importAttachment(it, "uploaderC", "contract-signed.jar") }
         anotherSignedContractJar.read { storage.importAttachment(it, "uploaderD", "another-contract-signed.jar") }
+        contractJarV2.read { storage.importAttachment(it, "uploaderB", "contract-V2.jar") }
+        signedContractJarV2.read { storage.importAttachment(it, "uploaderC", "contract-signed-V2.jar") }
 
         assertEquals(
-                2,
-                storage.queryAttachmentsFully(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")))).size
+                4,
+                storage.queryAttachmentsFully(AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")))).size
         )
 
         assertEquals(
                 1,
-                storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(signersCondition = Builder.equal(listOf(publicKey)))).size
+                storage.queryAttachments(AttachmentsQueryCriteria(signersCondition = Builder.equal(listOf(publicKey)))).size
+        )
+
+        assertEquals(
+                3,
+                storage.queryAttachments(AttachmentsQueryCriteria(isSignedCondition = Builder.equal(true))).size
+        )
+
+        assertEquals(
+                1,
+                storage.queryAttachmentsFully(AttachmentsQueryCriteria(
+                        contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")),
+                        versionCondition = Builder.equal(listOf("2.0")),
+                        isSignedCondition = Builder.equal(true))).size
         )
 
         assertEquals(
                 2,
-                storage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(isSignedCondition = Builder.equal(true))).size
+                storage.queryAttachmentsFully(AttachmentsQueryCriteria(
+                        contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract", "com.example.AnotherContract")),
+                        versionCondition = Builder.equal(listOf("1.0")),
+                        isSignedCondition = Builder.equal(true))).size
         )
     }
 
@@ -251,8 +276,8 @@ class NodeAttachmentServiceTest {
         val (jarB, hashB) = makeTestJar(listOf(Pair("b", "b")))
         val (jarC, hashC) = makeTestJar(listOf(Pair("c", "c")))
 
-        fun uploaderCondition(s: String) = AttachmentQueryCriteria.AttachmentsQueryCriteria(uploaderCondition = Builder.equal(s))
-        fun filenamerCondition(s: String) = AttachmentQueryCriteria.AttachmentsQueryCriteria(filenameCondition = Builder.equal(s))
+        fun uploaderCondition(s: String) = AttachmentsQueryCriteria(uploaderCondition = Builder.equal(s))
+        fun filenamerCondition(s: String) = AttachmentsQueryCriteria(filenameCondition = Builder.equal(s))
 
         fun filenameSort(direction: Sort.Direction) = AttachmentSort(listOf(AttachmentSort.AttachmentSortColumn(AttachmentSort.AttachmentSortAttribute.FILENAME, direction)))
 
@@ -265,16 +290,15 @@ class NodeAttachmentServiceTest {
         assertEquals(
                 emptyList(),
                 storage.queryAttachments(
-                        AttachmentQueryCriteria.AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexA"))
-                                .and(AttachmentQueryCriteria.AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexB"))))
+                        AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexA"))
+                                .and(AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexB"))))
         )
 
         assertEquals(
                 listOf(hashA, hashB),
                 storage.queryAttachments(
-
-                        AttachmentQueryCriteria.AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexA"))
-                                .or(AttachmentQueryCriteria.AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexB"))))
+                        AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexA"))
+                                .or(AttachmentsQueryCriteria(uploaderCondition = Builder.equal("complexB"))))
         )
 
         val complexCondition =
@@ -316,7 +340,7 @@ class NodeAttachmentServiceTest {
             val bytes = testJar.readAll()
             val corruptBytes = "arggghhhh".toByteArray()
             System.arraycopy(corruptBytes, 0, bytes, 0, corruptBytes.size)
-            val corruptAttachment = NodeAttachmentService.DBAttachment(attId = id.toString(), content = bytes)
+            val corruptAttachment = NodeAttachmentService.DBAttachment(attId = id.toString(), content = bytes, version = "1.0")
             session.merge(corruptAttachment)
             id
         }
@@ -430,22 +454,23 @@ class NodeAttachmentServiceTest {
             }
         }
 
-        private fun makeTestSignedContractJar(workingDir: Path, contractName: String): Pair<Path, PublicKey> {
+        private fun makeTestSignedContractJar(workingDir: Path, contractName: String, version: String = "1.0"): Pair<Path, PublicKey> {
             val alias = "testAlias"
             val pwd = "testPassword"
             workingDir.generateKey(alias, pwd, ALICE_NAME.toString())
-            val jarName = makeTestContractJar(workingDir, contractName)
-            val signer = workingDir.signJar(jarName, alias, pwd)
+            val jarName = makeTestContractJar(workingDir, contractName, true, version)
+            val signer = workingDir.signJar(jarName.toAbsolutePath().toString(), alias, pwd)
             return workingDir.resolve(jarName) to signer
         }
 
-        private fun makeTestContractJar(workingDir: Path, contractName: String, signed: Boolean = false): String {
+        private fun makeTestContractJar(workingDir: Path, contractName: String, signed: Boolean = false, version: String = "1.0"): Path {
             val packages = contractName.split(".")
-            val jarName = "attachment-${packages.last()}-$signed"
+            val jarName = "attachment-${packages.last()}-$version-${(if (signed) "signed" else "")}.jar"
             val className = packages.last()
             createTestClass(workingDir, className, packages.subList(0, packages.size - 1))
-            workingDir.createJar(jarName, "${contractName.replace(".", "/")}.class")
-            return jarName
+            dir.createJar(jarName, "${contractName.replace(".", "/")}.class")
+            dir.addManifest(jarName, Pair(Attributes.Name.IMPLEMENTATION_VERSION, version))
+            return dir.resolve(jarName)
         }
 
         private fun createTestClass(workingDir: Path, className: String, packages: List<String>): Path {

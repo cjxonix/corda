@@ -236,6 +236,10 @@ class HibernateAttachmentQueryCriteriaParser(override val criteriaBuilder: Crite
                 predicateSet.add(criteriaBuilder.and(joinDBAttachmentToSigners.isNull))
         }
 
+        criteria.versionCondition?.let {
+            predicateSet.add(columnPredicateToPredicate(root.get<String>("version"), it))
+        }
+
         return predicateSet
     }
 }

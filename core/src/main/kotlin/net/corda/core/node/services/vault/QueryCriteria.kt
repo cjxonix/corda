@@ -280,7 +280,8 @@ sealed class AttachmentQueryCriteria : GenericQueryCriteria<AttachmentQueryCrite
                                                                    val uploadDateCondition: ColumnPredicate<Instant>? = null,
                                                                    val contractClassNamesCondition: ColumnPredicate<List<ContractClassName>>? = null,
                                                                    val signersCondition: ColumnPredicate<List<PublicKey>>? = null,
-                                                                   val isSignedCondition: ColumnPredicate<Boolean>? = null) : AttachmentQueryCriteria() {
+                                                                   val isSignedCondition: ColumnPredicate<Boolean>? = null,
+                                                                   val versionCondition: ColumnPredicate<List<String>>? = null) : AttachmentQueryCriteria() {
         override fun visit(parser: AttachmentsQueryCriteriaParser): Collection<Predicate> {
             return parser.parseCriteria(this)
         }
