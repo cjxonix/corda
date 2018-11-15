@@ -9,7 +9,7 @@ import java.io.InputStream
 import java.security.PublicKey
 
 @CordaSerializable
-class MockContractAttachment(override val id: SecureHash = SecureHash.zeroHash, val contract: ContractClassName, override val signers: List<PublicKey> = emptyList()) : Attachment {
+class MockContractAttachment(override val id: SecureHash = SecureHash.zeroHash, val contract: ContractClassName, override val signers: List<PublicKey> = emptyList(), override val version: String = "1.0") : Attachment {
     override fun open(): InputStream = ByteArrayInputStream(id.bytes)
     override val size = id.size
 }
