@@ -172,7 +172,8 @@ class TransactionTests {
                 id,
                 notary,
                 timeWindow,
-                privacySalt
+                privacySalt,
+                testNetworkParameters()
         )
 
         assertFailsWith<TransactionVerificationException.NotaryChangeInWrongTransactionType> { buildTransaction() }

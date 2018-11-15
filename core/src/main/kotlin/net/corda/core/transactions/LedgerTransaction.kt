@@ -48,7 +48,7 @@ data class LedgerTransaction @JvmOverloads constructor(
         val timeWindow: TimeWindow?,
         val privacySalt: PrivacySalt,
         /** Network parameters that were in force when the trasnaction was notarised. */
-        override val networkParameters: NetworkParameters? = null,
+        override val networkParameters: NetworkParameters,
         override val references: List<StateAndRef<ContractState>> = emptyList()
 ) : FullTransaction() {
     //DOCEND 1
@@ -110,11 +110,6 @@ data class LedgerTransaction @JvmOverloads constructor(
      * TODO - revisit once transaction contains network parameters.
      */
     private fun validatePackageOwnership(contractAttachmentsByContract: Map<ContractClassName, ContractAttachment>) {
-        // This should never happen once we have network parameters in the transaction.
-        if (networkParameters == null) {
-            return
-        }
-
         val contractsAndOwners = allStates.mapNotNull { transactionState ->
             val contractClassName = transactionState.contract
             networkParameters.getOwnerOf(contractClassName)?.let { contractClassName to it }
@@ -196,8 +191,7 @@ data class LedgerTransaction @JvmOverloads constructor(
                     networkParameters?.whitelistedContractImplementations)
 
             if (state.constraint is SignatureAttachmentConstraint)
-                checkMinimumPlatformVersion(networkParameters?.minimumPlatformVersion ?: 1, 4, "Signature constraints")
-
+                checkMinimumPlatformVersion(networkParameters.minimumPlatformVersion, 4, "Signature constraints")
             if (!state.constraint.isSatisfiedBy(constraintAttachment)) {
                 throw TransactionVerificationException.ContractConstraintRejection(id, state.contract)
             }
@@ -704,7 +698,7 @@ data class LedgerTransaction @JvmOverloads constructor(
              notary: Party? = this.notary,
              timeWindow: TimeWindow? = this.timeWindow,
              privacySalt: PrivacySalt = this.privacySalt,
-             networkParameters: NetworkParameters? = this.networkParameters
+             networkParameters: NetworkParameters = this.networkParameters
     ) = copy(inputs = inputs,
             outputs = outputs,
             commands = commands,
