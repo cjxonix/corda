@@ -214,6 +214,7 @@ data class LedgerTransaction @JvmOverloads constructor(
         }
     }
 
+    // TODO: revisit to include contract version information
     private fun getUniqueContractAttachmentsByContract(): Map<ContractClassName, ContractAttachment> {
         val result = mutableMapOf<ContractClassName, ContractAttachment>()
 

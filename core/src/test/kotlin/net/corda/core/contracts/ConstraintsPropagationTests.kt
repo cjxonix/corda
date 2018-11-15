@@ -8,9 +8,9 @@ import net.corda.core.crypto.SecureHash.Companion.allOnesHash
 import net.corda.core.crypto.SecureHash.Companion.zeroHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.internal.AbstractAttachment
 import net.corda.core.internal.AttachmentWithContext
 import net.corda.core.node.JavaPackageName
-import net.corda.core.node.NotaryInfo
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.finance.POUNDS
 import net.corda.finance.`issued by`
@@ -23,7 +23,6 @@ import net.corda.testing.core.TestIdentity
 import net.corda.testing.internal.rigorousMock
 import net.corda.testing.node.MockServices
 import net.corda.testing.node.ledger
-import net.corda.testing.services.MockAttachmentStorage
 import org.junit.Rule
 import org.junit.Test
 import java.security.PublicKey
@@ -226,6 +225,8 @@ class ConstraintsPropagationTests {
         }
     }
 
+    private class MockAttachment(dataLoader: () -> ByteArray, override val id: SecureHash, override val signers: List<PublicKey>) : AbstractAttachment(dataLoader)
+
     @Test
     fun `Signature Constraints canBeTransitionedFrom Hash Constraints behaves as expected`() {
 
@@ -238,7 +239,7 @@ class ConstraintsPropagationTests {
         val attachmentIdSigned = zeroHash       // NP CZ whitelisted
         whenever(attachmentSigned.signers).thenReturn(listOf(ALICE_PARTY.owningKey))
         whenever(attachmentSigned.contract).thenReturn(propagatingContractClassName)
-        val attachment = MockAttachmentStorage.MockAttachment({ ByteArray(0) }, attachmentIdSigned, listOf(ALICE_PARTY.owningKey))
+        val attachment = MockAttachment({ ByteArray(0) }, attachmentIdSigned, listOf(ALICE_PARTY.owningKey))
         whenever(attachmentSigned.attachment).thenReturn(attachment)
 
         val attachmentUnsigned = mock<ContractAttachment>()

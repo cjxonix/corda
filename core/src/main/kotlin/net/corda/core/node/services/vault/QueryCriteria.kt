@@ -275,15 +275,23 @@ sealed class AttachmentQueryCriteria : GenericQueryCriteria<AttachmentQueryCrite
     /**
      * AttachmentsQueryCriteria:
      */
-    data class AttachmentsQueryCriteria @JvmOverloads constructor (val uploaderCondition: ColumnPredicate<String>? = null,
-                                                                   val filenameCondition: ColumnPredicate<String>? = null,
-                                                                   val uploadDateCondition: ColumnPredicate<Instant>? = null,
-                                                                   val contractClassNamesCondition: ColumnPredicate<List<ContractClassName>>? = null,
-                                                                   val signersCondition: ColumnPredicate<List<PublicKey>>? = null,
-                                                                   val isSignedCondition: ColumnPredicate<Boolean>? = null,
-                                                                   val versionCondition: ColumnPredicate<List<String>>? = null) : AttachmentQueryCriteria() {
+    data class AttachmentsQueryCriteria @JvmOverloads constructor(val uploaderCondition: ColumnPredicate<String>? = null,
+                                                                  val filenameCondition: ColumnPredicate<String>? = null,
+                                                                  val uploadDateCondition: ColumnPredicate<Instant>? = null,
+                                                                  val contractClassNamesCondition: ColumnPredicate<List<ContractClassName>>? = null,
+                                                                  val signersCondition: ColumnPredicate<List<PublicKey>>? = null,
+                                                                  val isSignedCondition: ColumnPredicate<Boolean>? = null,
+                                                                  val versionCondition: ColumnPredicate<List<String>>? = null) : AttachmentQueryCriteria() {
         override fun visit(parser: AttachmentsQueryCriteriaParser): Collection<Predicate> {
             return parser.parseCriteria(this)
+        }
+
+        fun copy(
+                uploaderCondition: ColumnPredicate<String>? = this.uploaderCondition,
+                filenameCondition: ColumnPredicate<String>? = this.filenameCondition,
+                uploadDateCondition: ColumnPredicate<Instant>? = this.uploadDateCondition
+        ): AttachmentsQueryCriteria {
+            return AttachmentsQueryCriteria(uploaderCondition, filenameCondition, uploadDateCondition)
         }
     }
 

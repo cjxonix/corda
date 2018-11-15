@@ -121,10 +121,9 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
             resolveIdentity: (PublicKey) -> Party?,
             resolveAttachment: (SecureHash) -> Attachment?,
             resolveStateRef: (StateRef) -> TransactionState<*>?,
-            @Suppress("UNUSED_PARAMETER") resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?,
-            attachmentStorage: AttachmentStorage
+            @Suppress("UNUSED_PARAMETER") resolveContractAttachment: (TransactionState<ContractState>) -> AttachmentId?
     ): LedgerTransaction {
-        return toLedgerTransactionInternal(resolveIdentity, resolveAttachment, resolveStateRef, null, attachmentStorage)
+        return toLedgerTransactionInternal(resolveIdentity, resolveAttachment, resolveStateRef, null, null)
     }
 
     private fun toLedgerTransactionInternal(
@@ -132,7 +131,7 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
             resolveAttachment: (SecureHash) -> Attachment?,
             resolveStateRef: (StateRef) -> TransactionState<*>?,
             networkParameters: NetworkParameters?,
-            attachmentStorage: AttachmentStorage
+            attachmentStorage: AttachmentStorage?
     ): LedgerTransaction {
         // Look up public keys to authenticated identities.
         val authenticatedArgs = commands.lazyMapped { cmd, _ ->
@@ -154,7 +153,8 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
                 val contractClassNames = hashConstrainedInputs.map { it.state.contract }
                 println("Ledger txn: contractClassNames = $contractClassNames")
                 // TODO: query by Contract Class AND VERSION
-                val extraAttachmentIds = attachmentStorage.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(contractClassNames)))
+                checkNotNull(attachmentStorage)
+                val extraAttachmentIds = attachmentStorage!!.queryAttachments(AttachmentQueryCriteria.AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(contractClassNames)))
                 println("Ledger txn: extraAttachmentIds = $extraAttachmentIds")
                 extraAttachmentIds
             } else emptyList()

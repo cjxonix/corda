@@ -40,9 +40,11 @@ interface AttachmentConstraint {
      * Rules:
      *  * It is allowed for output states to inherit the exact same constraint as the input states.
      *  * The [AlwaysAcceptAttachmentConstraint] is not allowed to transition to a different constraint, as that could be used to hide malicious behaviour.
-     *  * Nothing can be migrated from the [HashAttachmentConstraint] except a [HashAttachmentConstraint] with the same hash.
      *  * Anything (except the [AlwaysAcceptAttachmentConstraint]) can be transitioned to a [HashAttachmentConstraint].
      *  * You can transition from the [WhitelistedByZoneAttachmentConstraint] to the [SignatureAttachmentConstraint] only if all signers of the JAR are required to sign in the future.
+     *  * You can transition form a [HashAttachmentConstraint] to a [SignatureAttachmentConstraint] when the following conditions are met:
+     *      1. Both original "hash-constrained" contract jar and signed "signature-constrained" contract jar are whitelisted in the CZ network map
+     *      2. Java package namespace of signed contract jar is registered in the CZ network map with same public keys (as used to sign contract jar)
      *
      * TODO - SignatureConstraint third party signers.
      */
@@ -75,10 +77,8 @@ interface AttachmentConstraint {
 
             // Transition from Hash to Signature constraint (via CZ whitelisting) requires
             // 1. Hashcode of both original (unsigned) and signed contract JARS are registered in the NP CZ whitelist
-            //    [prerequisite: both JARs have been registered with CZ whitelist]
-            // 2. Signer(s) of signature-constrained JAR is same as signer of registered package namespace
-            //    [prerequisite: corDapp developer registers package namespace in Network Parameters]
-            // 3. Signer(s) associated with signature constraint matche those of signed contract JAR.
+            // 2. Signer(s) of signature-constrained JAR is same as signer(s) of registered package namespace
+            // 3. Signer(s) associated with signature constraint match those of signed contract JAR.
             input is HashAttachmentConstraint && output is SignatureAttachmentConstraint -> {
                 val signedAttachment = attachment.signedContractAttachment
                 signedAttachment?.let {
