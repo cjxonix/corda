@@ -131,7 +131,7 @@ data class LedgerTransaction private constructor(
 
         AttachmentsClassLoaderBuilder.withAttachmentsClassloaderContext(this.attachments) { transactionClassLoader ->
 
-            val internalTx = createInternalLedgerTransaction(transactionClassLoader)
+            val internalTx = createInternalLedgerTransaction()
 
             // TODO - verify for version downgrade
             validatePackageOwnership(contractAttachmentsByContract)
@@ -271,12 +271,12 @@ data class LedgerTransaction private constructor(
         throw TransactionVerificationException.ContractCreationError(id, className, e)
     }
 
-    private fun createInternalLedgerTransaction(transactionClassLoader: ClassLoader): LedgerTransaction {
+    private fun createInternalLedgerTransaction(): LedgerTransaction {
         return if (resolvedInputBytes != null && resolvedReferenceBytes != null && componentGroups != null) {
 
             // Deserialize all relevant classes in the transaction classloader.
-            val resolvedDeserializedInputs = resolvedInputBytes.map { StateAndRef(it.serializedState.deserialize<TransactionState<ContractState>>(), it.ref) }
-            val resolvedDeserializedReferences = resolvedReferenceBytes.map { StateAndRef(it.serializedState.deserialize<TransactionState<ContractState>>(), it.ref) }
+            val resolvedDeserializedInputs = resolvedInputBytes.map { StateAndRef(it.serializedState.deserialize(), it.ref) }
+            val resolvedDeserializedReferences = resolvedReferenceBytes.map { StateAndRef(it.serializedState.deserialize(), it.ref) }
             val deserializedOutputs = deserialiseComponentGroup(componentGroups, TransactionState::class, ComponentGroupEnum.OUTPUTS_GROUP, forceDeserialize = true)
             val deserializedCommands = deserialiseCommands(this.componentGroups, forceDeserialize = true)
             val authenticatedArgs = deserializedCommands.map { cmd ->
