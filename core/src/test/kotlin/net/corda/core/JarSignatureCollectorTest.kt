@@ -1,11 +1,11 @@
-package net.corda.testing.core
+package net.corda.core
 
-import net.corda.testing.core.JarSignatureTestUtils.createJar
-import net.corda.testing.core.JarSignatureTestUtils.generateKey
-import net.corda.testing.core.JarSignatureTestUtils.getJarSigners
-import net.corda.testing.core.JarSignatureTestUtils.signJar
-import net.corda.testing.core.JarSignatureTestUtils.updateJar
-import net.corda.testing.core.JarSignatureTestUtils.addIndexList
+import net.corda.core.JarSignatureTestUtils.createJar
+import net.corda.core.JarSignatureTestUtils.generateKey
+import net.corda.core.JarSignatureTestUtils.getJarSigners
+import net.corda.core.JarSignatureTestUtils.signJar
+import net.corda.core.JarSignatureTestUtils.updateJar
+import net.corda.core.JarSignatureTestUtils.addIndexList
 import net.corda.core.identity.Party
 import net.corda.core.internal.*
 import net.corda.testing.core.ALICE_NAME
