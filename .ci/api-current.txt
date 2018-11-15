@@ -433,6 +433,7 @@ public interface net.corda.core.contracts.Attachment extends net.corda.core.cont
   @NotNull
   public abstract java.util.List<java.security.PublicKey> getSigners()
   public abstract int getSize()
+  public abstract String getVersion()
   @NotNull
   public abstract java.io.InputStream open()
   @NotNull
