@@ -6,10 +6,11 @@ import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.whenever
-import net.corda.core.ContractJarTestUtils.dir
 import net.corda.core.ContractJarTestUtils.makeTestContractJar
 import net.corda.core.ContractJarTestUtils.makeTestJar
 import net.corda.core.ContractJarTestUtils.makeTestSignedContractJar
+import net.corda.core.SelfCleaningDir
+import net.corda.core.contracts.ContractAttachment
 import net.corda.core.crypto.SecureHash
 import net.corda.core.crypto.sha256
 import net.corda.core.flows.FlowLogic
@@ -74,9 +75,6 @@ class NodeAttachmentServiceTest {
 
     @After
     fun tearDown() {
-        dir.list { subdir ->
-            subdir.forEach(Path::deleteRecursively)
-        }
         database.close()
     }
 
@@ -211,50 +209,52 @@ class NodeAttachmentServiceTest {
 
     @Test
     fun `contract class, versioning and signing metadata can be used to search`() {
-        val (sampleJar, _) = makeTestJar()
-        val contractJar = makeTestContractJar("com.example.MyContract")
-        val (signedContractJar, publicKey) = makeTestSignedContractJar("com.example.MyContract")
-        val (anotherSignedContractJar, _) = makeTestSignedContractJar("com.example.AnotherContract")
-        val contractJarV2 = makeTestContractJar("com.example.MyContract", version = "2.0")
-        val (signedContractJarV2, publicKeyV2) = makeTestSignedContractJar("com.example.MyContract", version = "2.0")
+        SelfCleaningDir().use { file ->
+            val (sampleJar, _) = makeTestJar()
+            val contractJar = makeTestContractJar(file.path, "com.example.MyContract")
+            val (signedContractJar, publicKey) = makeTestSignedContractJar(file.path, "com.example.MyContract")
+            val (anotherSignedContractJar, _) = makeTestSignedContractJar(file.path,"com.example.AnotherContract")
+            val contractJarV2 = makeTestContractJar(file.path,"com.example.MyContract", version = "2.0")
+            val (signedContractJarV2, publicKeyV2) = makeTestSignedContractJar(file.path,"com.example.MyContract", version = "2.0")
 
-        sampleJar.read { storage.importAttachment(it, "uploaderA", "sample.jar") }
-        contractJar.read { storage.importAttachment(it, "uploaderB", "contract.jar") }
-        signedContractJar.read { storage.importAttachment(it, "uploaderC", "contract-signed.jar") }
-        anotherSignedContractJar.read { storage.importAttachment(it, "uploaderD", "another-contract-signed.jar") }
-        contractJarV2.read { storage.importAttachment(it, "uploaderB", "contract-V2.jar") }
-        signedContractJarV2.read { storage.importAttachment(it, "uploaderC", "contract-signed-V2.jar") }
+            sampleJar.read { storage.importAttachment(it, "uploaderA", "sample.jar") }
+            contractJar.read { storage.importAttachment(it, "uploaderB", "contract.jar") }
+            signedContractJar.read { storage.importAttachment(it, "uploaderC", "contract-signed.jar") }
+            anotherSignedContractJar.read { storage.importAttachment(it, "uploaderD", "another-contract-signed.jar") }
+            contractJarV2.read { storage.importAttachment(it, "uploaderB", "contract-V2.jar") }
+            signedContractJarV2.read { storage.importAttachment(it, "uploaderC", "contract-signed-V2.jar") }
 
-        assertEquals(
-                4,
-                storage.queryAttachmentsFully(AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")))).size
-        )
+            assertEquals(
+                    4,
+                    storage.queryAttachmentsFully(AttachmentsQueryCriteria(contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")))).size
+            )
 
-        assertEquals(
-                1,
-                storage.queryAttachments(AttachmentsQueryCriteria(signersCondition = Builder.equal(listOf(publicKey)))).size
-        )
+            assertEquals(
+                    1,
+                    storage.queryAttachments(AttachmentsQueryCriteria(signersCondition = Builder.equal(listOf(publicKey)))).size
+            )
 
-        assertEquals(
-                3,
-                storage.queryAttachments(AttachmentsQueryCriteria(isSignedCondition = Builder.equal(true))).size
-        )
+            assertEquals(
+                    3,
+                    storage.queryAttachments(AttachmentsQueryCriteria(isSignedCondition = Builder.equal(true))).size
+            )
 
-        assertEquals(
-                1,
-                storage.queryAttachmentsFully(AttachmentsQueryCriteria(
-                        contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")),
-                        versionCondition = Builder.equal(listOf("2.0")),
-                        isSignedCondition = Builder.equal(true))).size
-        )
+            assertEquals(
+                    1,
+                    storage.queryAttachmentsFully(AttachmentsQueryCriteria(
+                            contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract")),
+                            versionCondition = Builder.equal(listOf("2.0")),
+                            isSignedCondition = Builder.equal(true))).size
+            )
 
-        assertEquals(
-                2,
-                storage.queryAttachmentsFully(AttachmentsQueryCriteria(
-                        contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract", "com.example.AnotherContract")),
-                        versionCondition = Builder.equal(listOf("1.0")),
-                        isSignedCondition = Builder.equal(true))).size
-        )
+            assertEquals(
+                    2,
+                    storage.queryAttachmentsFully(AttachmentsQueryCriteria(
+                            contractClassNamesCondition = Builder.equal(listOf("com.example.MyContract", "com.example.AnotherContract")),
+                            versionCondition = Builder.equal(listOf("1.0")),
+                            isSignedCondition = Builder.equal(true))).size
+            )
+        }
     }
 
     @Test

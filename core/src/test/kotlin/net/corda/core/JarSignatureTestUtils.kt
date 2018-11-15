@@ -1,10 +1,13 @@
-package net.corda.testing.core
+package net.corda.core
 
 import net.corda.core.internal.JarSignatureCollector
+import net.corda.core.internal.deleteRecursively
 import net.corda.core.internal.div
 import net.corda.nodeapi.internal.crypto.loadKeyStore
+import java.io.Closeable
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.security.PublicKey
@@ -13,6 +16,16 @@ import java.util.jar.JarInputStream
 import java.util.jar.JarOutputStream
 import java.util.jar.Manifest
 import kotlin.test.assertEquals
+
+/**
+ * Class to create an automatically delete a temporary directory.
+ */
+class SelfCleaningDir : Closeable {
+    val path: Path = Files.createTempDirectory(JarSignatureTestUtils::class.simpleName)
+    override fun close() {
+        path.deleteRecursively()
+    }
+}
 
 object JarSignatureTestUtils {
     val bin = Paths.get(System.getProperty("java.home")).let { if (it.endsWith("jre")) it.parent else it } / "bin"

@@ -145,9 +145,6 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
         val resolvedReferences = references.lazyMapped { ref, _ ->
             resolveStateRef(ref)?.let { StateAndRef(it, ref) } ?: throw TransactionResolutionException(ref.txhash)
         }
-        val resolvedAttachments = attachments.lazyMapped { att, _ ->
-            resolveAttachment(att) ?: throw AttachmentResolutionException(att)
-        }
 
         // HashConstraint -> SignatureConstraint migration
         val signatureConstrainedOutputs = outputs.filter { it.constraint is SignatureAttachmentConstraint }
@@ -162,9 +159,11 @@ class WireTransaction(componentGroups: List<ComponentGroup>, val privacySalt: Pr
                 extraAttachmentIds
             } else emptyList()
 
-        val attachments = (resolvedAttachments + extraAttachmentIds).map { resolveAttachment(it) ?: throw AttachmentResolutionException(it) }
+        val resolvedAttachments = (attachments + extraAttachmentIds).lazyMapped { att, _ ->
+            resolveAttachment(att) ?: throw AttachmentResolutionException(att)
+        }
 
-        val ltx = LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, attachments, id, notary, timeWindow, privacySalt, networkParameters, resolvedReferences)
+        val ltx = LedgerTransaction(resolvedInputs, outputs, authenticatedArgs, resolvedAttachments, id, notary, timeWindow, privacySalt, networkParameters, resolvedReferences)
         checkTransactionSize(ltx, networkParameters?.maxTransactionSize ?: 10485760)
         return ltx
     }
