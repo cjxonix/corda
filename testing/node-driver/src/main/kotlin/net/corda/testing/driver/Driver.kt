@@ -761,4 +761,56 @@ class DriverParameters private constructor(
             initialiseSerialization = initialiseSerialization,
             cordappsForAllNodes = cordappsForAllNodes
     )
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DriverParameters
+
+        if (isDebug != other.isDebug) return false
+        if (driverDirectory != other.driverDirectory) return false
+        if (portAllocation != other.portAllocation) return false
+        if (debugPortAllocation != other.debugPortAllocation) return false
+        if (systemProperties != other.systemProperties) return false
+        if (useTestClock != other.useTestClock) return false
+        if (startNodesInProcess != other.startNodesInProcess) return false
+        if (waitForAllNodesToFinish != other.waitForAllNodesToFinish) return false
+        if (notarySpecs != other.notarySpecs) return false
+        if (extraCordappPackagesToScan != other.extraCordappPackagesToScan) return false
+        if (jmxPolicy != other.jmxPolicy) return false
+        if (networkParameters != other.networkParameters) return false
+        if (notaryCustomOverrides != other.notaryCustomOverrides) return false
+        if (initialiseSerialization != other.initialiseSerialization) return false
+        if (inMemoryDB != other.inMemoryDB) return false
+        if (cordappsForAllNodes != other.cordappsForAllNodes) return false
+        if (checkAddressesToBindToEagerly != other.checkAddressesToBindToEagerly) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = isDebug.hashCode()
+        result = 31 * result + driverDirectory.hashCode()
+        result = 31 * result + portAllocation.hashCode()
+        result = 31 * result + debugPortAllocation.hashCode()
+        result = 31 * result + systemProperties.hashCode()
+        result = 31 * result + useTestClock.hashCode()
+        result = 31 * result + startNodesInProcess.hashCode()
+        result = 31 * result + waitForAllNodesToFinish.hashCode()
+        result = 31 * result + notarySpecs.hashCode()
+        result = 31 * result + extraCordappPackagesToScan.hashCode()
+        result = 31 * result + jmxPolicy.hashCode()
+        result = 31 * result + networkParameters.hashCode()
+        result = 31 * result + notaryCustomOverrides.hashCode()
+        result = 31 * result + initialiseSerialization.hashCode()
+        result = 31 * result + inMemoryDB.hashCode()
+        result = 31 * result + (cordappsForAllNodes?.hashCode() ?: 0)
+        result = 31 * result + checkAddressesToBindToEagerly.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "DriverParameters(isDebug=$isDebug, driverDirectory=$driverDirectory, portAllocation=$portAllocation, debugPortAllocation=$debugPortAllocation, systemProperties=$systemProperties, useTestClock=$useTestClock, startNodesInProcess=$startNodesInProcess, waitForAllNodesToFinish=$waitForAllNodesToFinish, notarySpecs=$notarySpecs, extraCordappPackagesToScan=$extraCordappPackagesToScan, jmxPolicy=$jmxPolicy, networkParameters=$networkParameters, notaryCustomOverrides=$notaryCustomOverrides, initialiseSerialization=$initialiseSerialization, inMemoryDB=$inMemoryDB, cordappsForAllNodes=$cordappsForAllNodes, checkAddressesToBindToEagerly=$checkAddressesToBindToEagerly)"
+    }
 }
