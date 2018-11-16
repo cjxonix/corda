@@ -27,7 +27,9 @@ import java.security.PublicKey
 import java.time.Instant
 import java.util.*
 
-fun main(args: Array<String>) = GenerateCPPHeaders().start(args)
+fun main(args: Array<String>) {
+    GenerateCPPHeaders().start(args)
+}
 
 @CordaSerializable
 data class Employee(val names: Pair<String, String>)
@@ -251,7 +253,7 @@ class GenerateCPPHeaders : CordaCliWrapper("generate-cpp-headers", "Generate sou
 
     private fun generateClassFor(type: Type, serializerFactory: SerializerFactory, seenSoFar: Set<String>): GenResult? {
         // Get the serializer created by the serialization engine, and map it to C++.
-        val amqpSerializer: AMQPSerializer<Any> = serializerFactory.get(type)
+        val amqpSerializer: AMQPSerializer<Any> = serializerFactory.get(null, type)
         if (amqpSerializer !is ObjectSerializer) {
             // Some serialisers are special and need to be hand coded.
             when (amqpSerializer.type) {

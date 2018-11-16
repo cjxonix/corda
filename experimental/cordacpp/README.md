@@ -6,6 +6,12 @@ to help people explore the wire format at a low level.
 
 You will need to install Apache Qpid Proton C++ and cmake to be able to compile this.
 
+# Setup
+
+```bash
+./gradlew experimental:cordacpp:cordacpp
+```
+
 Additionally you will need to run the included Kotlin tool to generate C++ header files
 from annotated classes. Run it with command line arguments like this:
 
