@@ -122,6 +122,12 @@ data class LedgerTransaction private constructor(
 
     /**
      * Verifies this transaction and runs contract code. At this stage it is assumed that signatures have already been verified.
+
+     * The contract verification logic is run in a custom [AttachmentsClassLoader] created for the current transaction.
+     * This classloader is only used during verification and does not leak to the client code.
+     *
+     * The reason for this is that classes (contract states) deserialized in this classloader would actually be a different type from what
+     * the calling code would expect.
      *
      * @throws TransactionVerificationException if anything goes wrong.
      */
@@ -302,7 +308,6 @@ data class LedgerTransaction private constructor(
     /**
      * Check the transaction is contract-valid by running the verify() for each input and output state contract.
      * If any contract fails to verify, the whole transaction is considered to be invalid.
-     * The contract verification logic is run in a custom classloader created for the current transaction.
      */
     private fun verifyContracts(internalTx: LedgerTransaction) {
         val contractClasses = (internalTx.inputs.map { it.state } + internalTx.outputs).toSet()

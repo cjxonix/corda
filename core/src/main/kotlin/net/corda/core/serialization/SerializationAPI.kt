@@ -177,7 +177,7 @@ interface SerializationContext {
     fun withClassLoader(classLoader: ClassLoader): SerializationContext
 
     /**
-     * Does not do anything and will be removed in Corda 5.
+     * Does not do anything.
      */
     @Throws(MissingAttachmentsException::class)
     @Deprecated("There is no reason to call this. This method does not actually do anything.")

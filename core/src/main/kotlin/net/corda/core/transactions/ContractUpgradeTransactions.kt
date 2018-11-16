@@ -40,7 +40,6 @@ data class ContractUpgradeWireTransaction(
 ) : CoreTransaction() {
 
     companion object {
-
         /**
          * Runs the explicit upgrade logic.
          */

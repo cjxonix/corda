@@ -3,6 +3,7 @@ package net.corda.core.serialization.internal
 import net.corda.core.contracts.Attachment
 import net.corda.core.contracts.ContractAttachment
 import net.corda.core.crypto.SecureHash
+import net.corda.core.internal.VisibleForTesting
 import net.corda.core.internal.isUploaderTrusted
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializationFactory
@@ -90,6 +91,7 @@ class AttachmentsClassLoader(attachments: List<Attachment>, parent: ClassLoader 
 /**
  * This is just a factory that provides a cache to avoid constructing expensive [AttachmentsClassLoader]s.
  */
+@VisibleForTesting
 internal object AttachmentsClassLoaderBuilder {
 
     private const val ATTACHMENT_CLASSLOADER_CACHE_SIZE = 1000
