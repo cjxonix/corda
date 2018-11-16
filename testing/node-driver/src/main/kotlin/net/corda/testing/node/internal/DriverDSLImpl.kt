@@ -12,6 +12,7 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.*
 import net.corda.core.internal.concurrent.*
+import net.corda.core.internal.errors.AddressBindingException
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.node.NetworkParameters
 import net.corda.core.node.NotaryInfo
@@ -68,9 +69,8 @@ import java.time.Instant
 import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
+import java.util.concurrent.CompletableFuture.allOf
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -396,6 +396,8 @@ class DriverDSLImpl(
                 NotaryHandle(identity, validating, nodeHandlesFuture)
             }
         }
+        // TODO sollecitom check
+        _notaries.getOrThrow()
     }
 
     private fun startNotaryIdentityGeneration(): CordaFuture<List<NotaryInfo>> {
@@ -603,6 +605,26 @@ class DriverDSLImpl(
         val cordappDirectories = existingCorDappDirectoriesOption + (baseCordapps + additionalCordapps).map { TestCordappDirectories.getJarDirectory(it).toString() }
 
         val config = NodeConfig(specifiedConfig.typesafe.withValue(NodeConfiguration.cordappDirectoriesKey, ConfigValueFactory.fromIterable(cordappDirectories.toSet())))
+
+        val addressesToBindOn = mutableListOf<NetworkHostAndPort>()
+        if (!config.corda.rpcOptions.standAloneBroker) {
+            addressesToBindOn += config.corda.rpcOptions.address
+            if (config.corda.rpcOptions.adminAddress != config.corda.rpcOptions.address) {
+                addressesToBindOn += config.corda.rpcOptions.adminAddress
+            }
+        }
+        if (!config.corda.messagingServerExternal) {
+            addressesToBindOn += config.corda.p2pAddress
+        }
+        config.corda.effectiveH2Settings?.address?.let { addressesToBindOn += it }
+        // TODO sollecitom, guard this with a flag, check the timeout
+        if (addressesToBindOn.isNotEmpty()) {
+            try {
+                allOf(*addressesToBindOn.map { addressMustNotBeBoundFuture(executorService, it).toCompletableFuture() }.toTypedArray()).getOrThrow(Duration.ofSeconds(2))
+            } catch (e: TimeoutException) {
+                throw IllegalStateException("Unable to start node with name ${specifiedConfig.corda.myLegalName}.", AddressBindingException(addressesToBindOn.toSet()))
+            }
+        }
 
         if (startInProcess ?: startNodesInProcess) {
             val nodeAndThreadFuture = startInProcessNode(executorService, config)
