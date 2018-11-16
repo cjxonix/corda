@@ -10,7 +10,7 @@ Unreleased
 * Deprecated `SerializationContext.withAttachmentsClassLoader`. This functionality has always been disabled by flags
 and there is no reason for a CorDapp developer to use it. It is just an internal implementation detail of Corda.
 
-* Deprecated the `LedgerTransaction` constructor. It will become private in the next version.
+* Deprecated the `LedgerTransaction` constructor. No client code should call it directly. LedgerTransactions can be created from WireTransactions if required.
 
 * Introduced new optional network bootstrapper command line options (--register-package-owner, --unregister-package-owner)
   to register/unregister a java package namespace with an associated owner in the network parameter packageOwnership whitelist.
