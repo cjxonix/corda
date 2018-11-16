@@ -92,7 +92,8 @@ class DriverDSLImpl(
         val networkParameters: NetworkParameters,
         val notaryCustomOverrides: Map<String, Any?>,
         val inMemoryDB: Boolean,
-        val cordappsForAllNodes: Collection<TestCordapp>
+        val cordappsForAllNodes: Collection<TestCordapp>,
+        val checkAddressesToBindToEagerly: Boolean
 ) : InternalDriverDSL {
 
     private var _executorService: ScheduledExecutorService? = null
@@ -396,8 +397,9 @@ class DriverDSLImpl(
                 NotaryHandle(identity, validating, nodeHandlesFuture)
             }
         }
-        // TODO sollecitom check
-        _notaries.getOrThrow()
+        if (checkAddressesToBindToEagerly) {
+            _notaries.getOrThrow()
+        }
     }
 
     private fun startNotaryIdentityGeneration(): CordaFuture<List<NotaryInfo>> {
@@ -606,23 +608,25 @@ class DriverDSLImpl(
 
         val config = NodeConfig(specifiedConfig.typesafe.withValue(NodeConfiguration.cordappDirectoriesKey, ConfigValueFactory.fromIterable(cordappDirectories.toSet())))
 
-        val addressesToBindOn = mutableListOf<NetworkHostAndPort>()
-        if (!config.corda.rpcOptions.standAloneBroker) {
-            addressesToBindOn += config.corda.rpcOptions.address
-            if (config.corda.rpcOptions.adminAddress != config.corda.rpcOptions.address) {
-                addressesToBindOn += config.corda.rpcOptions.adminAddress
+        if (checkAddressesToBindToEagerly) {
+            val addressesToBindOn = mutableListOf<NetworkHostAndPort>()
+            if (!config.corda.rpcOptions.standAloneBroker) {
+                addressesToBindOn += config.corda.rpcOptions.address
+                if (config.corda.rpcOptions.adminAddress != config.corda.rpcOptions.address) {
+                    addressesToBindOn += config.corda.rpcOptions.adminAddress
+                }
             }
-        }
-        if (!config.corda.messagingServerExternal) {
-            addressesToBindOn += config.corda.p2pAddress
-        }
-        config.corda.effectiveH2Settings?.address?.let { addressesToBindOn += it }
-        // TODO sollecitom, guard this with a flag, check the timeout
-        if (addressesToBindOn.isNotEmpty()) {
-            try {
-                allOf(*addressesToBindOn.map { addressMustNotBeBoundFuture(executorService, it).toCompletableFuture() }.toTypedArray()).getOrThrow(Duration.ofSeconds(2))
-            } catch (e: TimeoutException) {
-                throw IllegalStateException("Unable to start node with name ${specifiedConfig.corda.myLegalName}.", AddressBindingException(addressesToBindOn.toSet()))
+            if (!config.corda.messagingServerExternal) {
+                addressesToBindOn += config.corda.p2pAddress
+            }
+            config.corda.effectiveH2Settings?.address?.let { addressesToBindOn += it }
+            if (addressesToBindOn.isNotEmpty()) {
+                try {
+                    // TODO sollecitom move this 2 to constant
+                    allOf(*addressesToBindOn.map { addressMustNotBeBoundFuture(executorService, it).toCompletableFuture() }.toTypedArray()).getOrThrow(Duration.ofSeconds(2))
+                } catch (e: TimeoutException) {
+                    throw IllegalStateException("Unable to start node with name ${specifiedConfig.corda.myLegalName}.", AddressBindingException(addressesToBindOn.toSet()))
+                }
             }
         }
 
@@ -1071,7 +1075,8 @@ fun <DI : DriverDSL, D : InternalDriverDSL, A> genericDriver(
                     networkParameters = defaultParameters.networkParameters,
                     notaryCustomOverrides = defaultParameters.notaryCustomOverrides,
                     inMemoryDB = defaultParameters.inMemoryDB,
-                    cordappsForAllNodes = defaultParameters.cordappsForAllNodes()
+                    cordappsForAllNodes = defaultParameters.cordappsForAllNodes(),
+                    checkAddressesToBindToEagerly = defaultParameters.checkAddressesToBindToEagerly
             )
     )
     val shutdownHook = addShutdownHook(driverDsl::shutdown)
@@ -1165,6 +1170,7 @@ fun <A> internalDriver(
         notaryCustomOverrides: Map<String, Any?> = DriverParameters().notaryCustomOverrides,
         inMemoryDB: Boolean = DriverParameters().inMemoryDB,
         cordappsForAllNodes: Collection<TestCordapp> = DriverParameters().cordappsForAllNodes(),
+        checkAddressesToBindToEagerly: Boolean = DriverParameters().checkAddressesToBindToEagerly,
         dsl: DriverDSLImpl.() -> A
 ): A {
     return genericDriver(
@@ -1183,7 +1189,8 @@ fun <A> internalDriver(
                     networkParameters = networkParameters,
                     notaryCustomOverrides = notaryCustomOverrides,
                     inMemoryDB = inMemoryDB,
-                    cordappsForAllNodes = cordappsForAllNodes
+                    cordappsForAllNodes = cordappsForAllNodes,
+                    checkAddressesToBindToEagerly = checkAddressesToBindToEagerly
             ),
             coerce = { it },
             dsl = dsl,
