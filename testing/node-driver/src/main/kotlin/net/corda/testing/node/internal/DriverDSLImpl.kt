@@ -69,8 +69,11 @@ import java.time.Instant
 import java.time.ZoneOffset.UTC
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.CompletableFuture.allOf
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -1076,7 +1079,7 @@ fun <DI : DriverDSL, D : InternalDriverDSL, A> genericDriver(
                     notaryCustomOverrides = defaultParameters.notaryCustomOverrides,
                     inMemoryDB = defaultParameters.inMemoryDB,
                     cordappsForAllNodes = defaultParameters.cordappsForAllNodes(),
-                    checkAddressesToBindToEagerly = defaultParameters.checkAddressesToBindToEagerly
+                    checkAddressesToBindToEagerly = true
             )
     )
     val shutdownHook = addShutdownHook(driverDsl::shutdown)
@@ -1170,7 +1173,7 @@ fun <A> internalDriver(
         notaryCustomOverrides: Map<String, Any?> = DriverParameters().notaryCustomOverrides,
         inMemoryDB: Boolean = DriverParameters().inMemoryDB,
         cordappsForAllNodes: Collection<TestCordapp> = DriverParameters().cordappsForAllNodes(),
-        checkAddressesToBindToEagerly: Boolean = DriverParameters().checkAddressesToBindToEagerly,
+        checkAddressesToBindToEagerly: Boolean = true,
         dsl: DriverDSLImpl.() -> A
 ): A {
     return genericDriver(

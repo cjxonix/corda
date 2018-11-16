@@ -8,6 +8,7 @@ import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.PortAllocation
 import net.corda.testing.driver.driver
 import net.corda.testing.node.NotarySpec
+import net.corda.testing.node.internal.internalDriver
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.Test
@@ -40,7 +41,12 @@ class AddressBindingFailureTests {
             val notaryName = CordaX500Name.parse("O=Notary Cleaning Service, L=Zurich, C=CH")
             val address = InetSocketAddress(socket.localPort).toNetworkHostAndPort()
 
-            assertThatThrownBy { driver(DriverParameters(startNodesInProcess = false, notarySpecs = listOf(NotarySpec(notaryName)), notaryCustomOverrides = mapOf("p2pAddress" to address.toString()), portAllocation = portAllocation)) {} }.isInstanceOfSatisfying(IllegalStateException::class.java) { error ->
+            assertThatThrownBy {
+                driver(DriverParameters(startNodesInProcess = false,
+                    notarySpecs = listOf(NotarySpec(notaryName)),
+                    notaryCustomOverrides = mapOf("p2pAddress" to address.toString()),
+                        portAllocation = portAllocation)
+                ) {} }.isInstanceOfSatisfying(IllegalStateException::class.java) { error ->
 
                 assertThat(error.message).contains(notaryName.toString())
                 assertThat(error.cause).isInstanceOfSatisfying(AddressBindingException::class.java) { cause ->
@@ -52,12 +58,9 @@ class AddressBindingFailureTests {
     }
 
     private fun assertBindExceptionForOverrides(overrides: (NetworkHostAndPort) -> Map<String, Any?>) {
-
         ServerSocket(0).use { socket ->
-
             val address = InetSocketAddress(socket.localPort).toNetworkHostAndPort()
-            driver(DriverParameters(startNodesInProcess = true, notarySpecs = emptyList(), inMemoryDB = false, portAllocation = portAllocation).withCheckAddressesToBindToEagerly(false)) {
-
+            internalDriver(startNodesInProcess = true, notarySpecs = emptyList(), inMemoryDB = false, portAllocation = portAllocation, checkAddressesToBindToEagerly = false) {
                 assertThatThrownBy { startNode(customOverrides = overrides(address)).getOrThrow() }.isInstanceOfSatisfying(AddressBindingException::class.java) { exception ->
                     assertThat(exception.addresses).contains(address).withFailMessage("Expected addresses to contain $address but was ${exception.addresses}.")
                 }
