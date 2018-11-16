@@ -46,6 +46,8 @@ class AttachmentTest {
                 get() = listOf(ALICE_KEY)
             override val size: Int
                 get() = jarData.size
+            override val version: String
+                get() = "1.0"
 
             override fun open(): InputStream {
                 return jarData.inputStream()
