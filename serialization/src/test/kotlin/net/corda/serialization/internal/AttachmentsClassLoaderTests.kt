@@ -66,12 +66,12 @@ class AttachmentsClassLoaderTests {
     private val appContext get() = cordappProvider.getAppContext(cordapp)
     private val networkParametersStorage get() = rigorousMock<NetworkParametersStorage>().also {
         doReturn(networkParameters.serialize().hash).whenever(it).currentParametersHash
-        doReturn(networkParameters).whenever(it).currentParameters
     }
 
     private val serviceHub get() = rigorousMock<ServiceHub>().also {
         doReturn(attachments).whenever(it).attachments
         doReturn(cordappProvider).whenever(it).cordappProvider
+        doReturn(networkParameters).whenever(it).networkParameters
         doReturn(networkParametersStorage).whenever(it).networkParametersStorage
     }
 
