@@ -622,8 +622,7 @@ class DriverDSLImpl(
             config.corda.effectiveH2Settings?.address?.let { addressesToBindOn += it }
             if (addressesToBindOn.isNotEmpty()) {
                 try {
-                    // TODO sollecitom move this 2 to constant
-                    allOf(*addressesToBindOn.map { addressMustNotBeBoundFuture(executorService, it).toCompletableFuture() }.toTypedArray()).getOrThrow(Duration.ofSeconds(2))
+                    allOf(*addressesToBindOn.map { addressMustNotBeBoundFuture(executorService, it).toCompletableFuture() }.toTypedArray()).getOrThrow(portBindingCheckingTimeout)
                 } catch (e: TimeoutException) {
                     throw IllegalStateException("Unable to start node with name ${specifiedConfig.corda.myLegalName}.", AddressBindingException(addressesToBindOn.toSet()))
                 }
@@ -726,6 +725,7 @@ class DriverDSLImpl(
     companion object {
         internal val log = contextLogger()
 
+        private val portBindingCheckingTimeout = Duration.ofSeconds(2)
         private val defaultRpcUserList = listOf(InternalUser("default", "default", setOf("ALL")).toConfig().root().unwrapped())
         private val names = arrayOf(ALICE_NAME, BOB_NAME, DUMMY_BANK_A_NAME)
         /**

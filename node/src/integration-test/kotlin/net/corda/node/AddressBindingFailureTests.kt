@@ -35,7 +35,6 @@ class AddressBindingFailureTests {
 
     @Test
     fun `notary P2P address`() {
-
         ServerSocket(0).use { socket ->
 
             val notaryName = CordaX500Name.parse("O=Notary Cleaning Service, L=Zurich, C=CH")
