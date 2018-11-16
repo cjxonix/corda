@@ -1,12 +1,11 @@
-package net.corda.core
+package net.corda.testing.core
 
-import net.corda.core.JarSignatureTestUtils.addManifest
-import net.corda.core.JarSignatureTestUtils.createJar
-import net.corda.core.JarSignatureTestUtils.generateKey
-import net.corda.core.JarSignatureTestUtils.signJar
+import net.corda.testing.core.JarSignatureTestUtils.addManifest
+import net.corda.testing.core.JarSignatureTestUtils.createJar
+import net.corda.testing.core.JarSignatureTestUtils.generateKey
+import net.corda.testing.core.JarSignatureTestUtils.signJar
 import net.corda.core.internal.delete
 import net.corda.core.internal.div
-import net.corda.testing.core.ALICE_NAME
 import java.io.OutputStream
 import java.net.URI
 import java.nio.file.Path

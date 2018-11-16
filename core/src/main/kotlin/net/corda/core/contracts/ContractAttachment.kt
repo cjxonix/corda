@@ -3,6 +3,7 @@ package net.corda.core.contracts
 import net.corda.core.KeepForDJVM
 import net.corda.core.serialization.CordaSerializable
 import java.security.PublicKey
+import java.util.jar.Attributes
 
 /**
  * Wrap an attachment in this if it is to be used as an executable contract attachment
@@ -24,7 +25,12 @@ class ContractAttachment @JvmOverloads constructor(
 
     val isSigned: Boolean get() = signers.isNotEmpty()
 
+    /**
+     * Contract version
+     */
+    val version: String = try { attachment.openAsJAR().manifest?.mainAttributes?.getValue(Attributes.Name.IMPLEMENTATION_VERSION) ?: "1.0" } catch (e: Exception) { "1.0" }
+
     override fun toString(): String {
-        return "ContractAttachment(attachment=${attachment.id}, contracts='$allContracts', uploader='$uploader', signed='$isSigned)"
+        return "ContractAttachment(attachment=${attachment.id}, contracts='$allContracts', uploader='$uploader', signed='$isSigned', version='$version')"
     }
 }

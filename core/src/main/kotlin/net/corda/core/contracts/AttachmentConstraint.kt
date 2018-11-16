@@ -42,7 +42,7 @@ interface AttachmentConstraint {
      *  * The [AlwaysAcceptAttachmentConstraint] is not allowed to transition to a different constraint, as that could be used to hide malicious behaviour.
      *  * Anything (except the [AlwaysAcceptAttachmentConstraint]) can be transitioned to a [HashAttachmentConstraint].
      *  * You can transition from the [WhitelistedByZoneAttachmentConstraint] to the [SignatureAttachmentConstraint] only if all signers of the JAR are required to sign in the future.
-     *  * You can transition form a [HashAttachmentConstraint] to a [SignatureAttachmentConstraint] when the following conditions are met:
+     *  * You can transition from a [HashAttachmentConstraint] to a [SignatureAttachmentConstraint] when the following conditions are met:
      *      1. Both original "hash-constrained" contract jar and signed "signature-constrained" contract jar are whitelisted in the CZ network map
      *      2. Java package namespace of signed contract jar is registered in the CZ network map with same public keys (as used to sign contract jar)
      *

@@ -1,4 +1,4 @@
-package net.corda.core
+package net.corda.testing.core
 
 import net.corda.core.internal.JarSignatureCollector
 import net.corda.core.internal.deleteRecursively
