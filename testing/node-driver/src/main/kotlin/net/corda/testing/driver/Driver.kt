@@ -148,7 +148,6 @@ data class NodeParameters(
         val customOverrides: Map<String, Any?> = emptyMap(),
         val startInSameProcess: Boolean? = null,
         val maximumHeapSize: String = "512m",
-        val logLevel: String? = null,
         val additionalCordapps: Collection<TestCordapp> = emptySet(),
         val regenerateCordappsOnStart: Boolean = false,
         val flowOverrides: Map<out Class<out FlowLogic<*>>, Class<out FlowLogic<*>>> = emptyMap()
@@ -165,40 +164,6 @@ data class NodeParameters(
      * @param startInSameProcess Determines if the node should be started inside the same process the Driver is running
      *     in. If null the Driver-level value will be used.
      * @param maximumHeapSize The maximum JVM heap size to use for the node.
-     * @param logLevel Logging level threshold.
-     */
-    constructor(
-            providedName: CordaX500Name?,
-            rpcUsers: List<User>,
-            verifierType: VerifierType,
-            customOverrides: Map<String, Any?>,
-            startInSameProcess: Boolean?,
-            maximumHeapSize: String,
-            logLevel: String? = null
-    ) : this(
-            providedName,
-            rpcUsers,
-            verifierType,
-            customOverrides,
-            startInSameProcess,
-            maximumHeapSize,
-            logLevel,
-            additionalCordapps = emptySet(),
-            regenerateCordappsOnStart = false
-    )
-
-    /**
-     * Helper builder for configuring a [Node] from Java.
-     *
-     * @param providedName Optional name of the node, which will be its legal name in [Party]. Defaults to something
-     *     random. Note that this must be unique as the driver uses it as a primary key!
-     * @param rpcUsers List of users who are authorised to use the RPC system. Defaults to a single user with
-     *     all permissions.
-     * @param verifierType The type of transaction verifier to use. See: [VerifierType]
-     * @param customOverrides A map of custom node configuration overrides.
-     * @param startInSameProcess Determines if the node should be started inside the same process the Driver is running
-     *     in. If null the Driver-level value will be used.
-     * @param maximumHeapSize The maximum JVM heap size to use for the node.
      */
     constructor(
             providedName: CordaX500Name?,
@@ -214,44 +179,7 @@ data class NodeParameters(
             customOverrides,
             startInSameProcess,
             maximumHeapSize,
-            null,
-            additionalCordapps = emptySet(),
-            regenerateCordappsOnStart = false)
-
-    /**
-     * Helper builder for configuring a [Node] from Java.
-     *
-     * @param providedName Optional name of the node, which will be its legal name in [Party]. Defaults to something
-     *     random. Note that this must be unique as the driver uses it as a primary key!
-     * @param rpcUsers List of users who are authorised to use the RPC system. Defaults to a single user with
-     *     all permissions.
-     * @param verifierType The type of transaction verifier to use. See: [VerifierType]
-     * @param customOverrides A map of custom node configuration overrides.
-     * @param startInSameProcess Determines if the node should be started inside the same process the Driver is running
-     *     in. If null the Driver-level value will be used.
-     * @param maximumHeapSize The maximum JVM heap size to use for the node.
-     * @param additionalCordapps Additional [TestCordapp]s that this node will have available, in addition to the ones common to all nodes managed by the [DriverDSL].
-     * @param regenerateCordappsOnStart Whether existing [TestCordapp]s unique to this node will be re-generated on start. Useful when stopping and restarting the same node.
-     */
-    constructor(
-            providedName: CordaX500Name?,
-            rpcUsers: List<User>,
-            verifierType: VerifierType,
-            customOverrides: Map<String, Any?>,
-            startInSameProcess: Boolean?,
-            maximumHeapSize: String,
-            additionalCordapps: Set<TestCordapp> = emptySet(),
-            regenerateCordappsOnStart: Boolean = false
-    ) : this(
-            providedName,
-            rpcUsers,
-            verifierType,
-            customOverrides,
-            startInSameProcess,
-            maximumHeapSize,
-            null,
-            additionalCordapps,
-            regenerateCordappsOnStart)
+            additionalCordapps = emptySet())
 
     fun copy(
             providedName: CordaX500Name?,
@@ -260,23 +188,6 @@ data class NodeParameters(
             customOverrides: Map<String, Any?>,
             startInSameProcess: Boolean?,
             maximumHeapSize: String
-    ) = this.copy(
-            providedName,
-            rpcUsers,
-            verifierType,
-            customOverrides,
-            startInSameProcess,
-            maximumHeapSize,
-            null)
-
-    fun copy(
-            providedName: CordaX500Name?,
-            rpcUsers: List<User>,
-            verifierType: VerifierType,
-            customOverrides: Map<String, Any?>,
-            startInSameProcess: Boolean?,
-            maximumHeapSize: String,
-            logLevel: String?
     ) = this.copy(
             providedName = providedName,
             rpcUsers = rpcUsers,
@@ -284,9 +195,7 @@ data class NodeParameters(
             customOverrides = customOverrides,
             startInSameProcess = startInSameProcess,
             maximumHeapSize = maximumHeapSize,
-            logLevel = logLevel,
-            additionalCordapps = additionalCordapps,
-            regenerateCordappsOnStart = regenerateCordappsOnStart
+            additionalCordapps = additionalCordapps
     )
 
     fun withProvidedName(providedName: CordaX500Name?): NodeParameters = copy(providedName = providedName)
@@ -295,7 +204,6 @@ data class NodeParameters(
     fun withCustomOverrides(customOverrides: Map<String, Any?>): NodeParameters = copy(customOverrides = customOverrides)
     fun withStartInSameProcess(startInSameProcess: Boolean?): NodeParameters = copy(startInSameProcess = startInSameProcess)
     fun withMaximumHeapSize(maximumHeapSize: String): NodeParameters = copy(maximumHeapSize = maximumHeapSize)
-    fun withLogLevel(logLevel: String?): NodeParameters = copy(logLevel = logLevel)
     fun withAdditionalCordapps(additionalCordapps: Set<TestCordapp>): NodeParameters = copy(additionalCordapps = additionalCordapps)
     fun withRegenerateCordappsOnStart(regenerateCordappsOnStart: Boolean): NodeParameters = copy(regenerateCordappsOnStart = regenerateCordappsOnStart)
     fun withFlowOverrides(flowOverrides: Map<Class<out FlowLogic<*>>, Class<out FlowLogic<*>>>): NodeParameters = copy(flowOverrides = flowOverrides)

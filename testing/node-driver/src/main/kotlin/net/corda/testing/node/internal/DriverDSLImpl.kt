@@ -220,7 +220,7 @@ class DriverDSLImpl(
                         "networkServices.networkMapURL" to compatibilityZone.networkMapURL().toString())
         }
 
-        val flowOverrideConfig = parameters.flowOverrides.map { FlowOverride(it.key.canonicalName, it.value.canonicalName) }.let { FlowOverrideConfig(it) }
+        val flowOverrideConfig = FlowOverrideConfig(parameters.flowOverrides.map { FlowOverride(it.key.canonicalName, it.value.canonicalName) })
         val overrides = configOf(
                 NodeConfiguration::myLegalName.name to name.toString(),
                 NodeConfiguration::p2pAddress.name to p2pAddress.toString(),
@@ -286,12 +286,6 @@ class DriverDSLImpl(
                     "--network-root-truststore-password=$rootTruststorePassword"
             ).map { config }
         }
-    }
-
-    private enum class ClusterType(val validating: Boolean, val clusterName: CordaX500Name) {
-        VALIDATING_RAFT(true, CordaX500Name("Raft", "Zurich", "CH")),
-        NON_VALIDATING_RAFT(false, CordaX500Name("Raft", "Zurich", "CH")),
-        NON_VALIDATING_BFT(false, CordaX500Name("BFT", "Zurich", "CH"))
     }
 
     @Suppress("DEPRECATION")
