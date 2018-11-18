@@ -135,8 +135,10 @@ abstract class PortAllocation {
  *     in. If null the Driver-level value will be used.
  * @property maximumHeapSize The maximum JVM heap size to use for the node.
  * @property logLevel Logging level threshold.
- * @property additionalCordapps Additional [TestCordapp]s that this node will have available, in addition to the ones common to all nodes managed by the [DriverDSL].
- * @property regenerateCordappsOnStart Whether existing [TestCordapp]s unique to this node will be re-generated on start. Useful when stopping and restarting the same node.
+ * @property additionalCordapps Additional [TestCordapp]s that this node will have available, in addition to the ones common to all nodes
+ * managed by the [DriverDSL].
+ * @property regenerateCordappsOnStart Whether existing [TestCordapp]s unique to this node will be re-generated on start. Useful when stopping
+ * and restarting the same node.
  */
 @Suppress("unused")
 data class NodeParameters(
@@ -149,7 +151,7 @@ data class NodeParameters(
         val logLevel: String? = null,
         val additionalCordapps: Collection<TestCordapp> = emptySet(),
         val regenerateCordappsOnStart: Boolean = false,
-        val flowOverrides: Map<Class<out FlowLogic<*>>, Class<out FlowLogic<*>>> = emptyMap()
+        val flowOverrides: Map<out Class<out FlowLogic<*>>, Class<out FlowLogic<*>>> = emptyMap()
 ) {
     /**
      * Helper builder for configuring a [Node] from Java.
@@ -276,15 +278,16 @@ data class NodeParameters(
             maximumHeapSize: String,
             logLevel: String?
     ) = this.copy(
-            providedName,
-            rpcUsers,
-            verifierType,
-            customOverrides,
-            startInSameProcess,
-            maximumHeapSize,
-            logLevel,
+            providedName = providedName,
+            rpcUsers = rpcUsers,
+            verifierType = verifierType,
+            customOverrides = customOverrides,
+            startInSameProcess = startInSameProcess,
+            maximumHeapSize = maximumHeapSize,
+            logLevel = logLevel,
             additionalCordapps = additionalCordapps,
-            regenerateCordappsOnStart = regenerateCordappsOnStart)
+            regenerateCordappsOnStart = regenerateCordappsOnStart
+    )
 
     fun withProvidedName(providedName: CordaX500Name?): NodeParameters = copy(providedName = providedName)
     fun withRpcUsers(rpcUsers: List<User>): NodeParameters = copy(rpcUsers = rpcUsers)
@@ -294,7 +297,8 @@ data class NodeParameters(
     fun withMaximumHeapSize(maximumHeapSize: String): NodeParameters = copy(maximumHeapSize = maximumHeapSize)
     fun withLogLevel(logLevel: String?): NodeParameters = copy(logLevel = logLevel)
     fun withAdditionalCordapps(additionalCordapps: Set<TestCordapp>): NodeParameters = copy(additionalCordapps = additionalCordapps)
-    fun withDeleteExistingCordappsDirectory(regenerateCordappsOnStart: Boolean): NodeParameters = copy(regenerateCordappsOnStart = regenerateCordappsOnStart)
+    fun withRegenerateCordappsOnStart(regenerateCordappsOnStart: Boolean): NodeParameters = copy(regenerateCordappsOnStart = regenerateCordappsOnStart)
+    fun withFlowOverrides(flowOverrides: Map<Class<out FlowLogic<*>>, Class<out FlowLogic<*>>>): NodeParameters = copy(flowOverrides = flowOverrides)
 }
 
 /**
