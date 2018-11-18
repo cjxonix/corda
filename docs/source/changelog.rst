@@ -7,6 +7,11 @@ release, see :doc:`upgrade-notes`.
 Unreleased
 ----------
 
+* ``SwapIdentitiesFlow``, from the experimental confidential-identities module, is now an inlined flow. Instead of passing in a ``Party`` with
+  whom to exchange the anonymous identity, a ``FlowSession`` is required instead. Further the flow running on the other side must also
+  call ``SwapIdentitiesFlow``. This change was required as the previous API design allowed any counterparty to generate anonoymous identities
+  with a node at will with no checks.
+
 * Introduced new optional network bootstrapper command line options (--register-package-owner, --unregister-package-owner)
   to register/unregister a java package namespace with an associated owner in the network parameter packageOwnership whitelist.
 
